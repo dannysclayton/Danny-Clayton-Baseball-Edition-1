@@ -69,7 +69,7 @@ public class Program
         Console.WriteLine("================================================");
         
         // Buttons based on your field layout
-        Console.WriteLine(" [P]itcher's Mound: Load Last Save");
+    Console.WriteLine(" [P]Pitcher's Mound: Load Last Save");
         Console.WriteLine("------------------------------------------------");
         
         Console.WriteLine(" [1]st Base: Season");

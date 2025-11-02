@@ -843,46 +843,199 @@ public class SettingsScreen
             }
 
             Console.WriteLine("\nOptions:");
-            Console.WriteLine(" [E]dit Player (by ID) | [M] Redshirt Management | [F] Auto Fielding Assignments | [O] Auto Batting Order | [N] Manual Batting Order | [V] View Lineup/Rotation | [P] Set Pitching Rotation | [Q] Validate Roster | [B] Back");
+                Console.WriteLine(" [E]dit Player (by ID) | [M] Redshirt Management | [F] Auto Fielding Assignments | [A] Manual Fielding Assignment | [O] Auto Batting Order | [N] Manual Batting Order | [V] View Lineup/Rotation | [P] Set Pitching Rotation | [Q] Validate Roster | [B] Back");
 
             Console.Write("Enter selection: ");
             string input = Console.ReadKey(true).KeyChar.ToString().ToUpper();
             _engine.PlayClickSound();
 
             switch (input)
-            {
-                case "E":
-                    HandleEditPlayerInRoster(team);
-                    break;
-                case "M":
-                    HandleRedshirtManagement(team);
-                    break;
-                case "F":
-                    AutoAssignFieldingPositions(team);
-                    break;
-                case "O":
-                    AutoAssignBattingOrder(team);
-                    break;
-                case "N":
-                    ManualAssignBattingOrder(team);
-                    break;
-                case "V":
-                    ViewLineupAndRotation(team);
-                    break;
-                case "P":
-                    HandlePitchingRotation(team);
-                    break;
-                case "Q":
-                    ValidateRoster(team);
-                    break;
-                case "B":
-                    return;
-                default:
-                    Console.WriteLine("\nInvalid selection. Press any key to continue...");
-                    Console.ReadKey(true);
-                    break;
+                {
+                    case "E":
+                        HandleEditPlayerInRoster(team);
+                        break;
+                    case "M":
+                        HandleRedshirtManagement(team);
+                        break;
+                    case "F":
+                        AutoAssignFieldingPositions(team);
+                        break;
+                    case "A":
+                        ManualAssignFieldingPositions(team);
+                        break;
+                    case "O":
+                        AutoAssignBattingOrder(team);
+                        break;
+                    case "N":
+                        ManualAssignBattingOrder(team);
+                        break;
+                    case "V":
+                        ViewLineupAndRotation(team);
+                        break;
+                    case "P":
+                        HandlePitchingRotation(team);
+                        break;
+                    case "Q":
+                        ValidateRoster(team);
+                        break;
+                    case "B":
+                        return;
+                    default:
+                        Console.WriteLine("\nInvalid selection. Press any key to continue...");
+                        Console.ReadKey(true);
+                        break;
+                }
             }
         }
+
+    // --- Manual Fielding Assignment ---
+    private void ManualAssignFieldingPositions(Team team)
+    {
+        var positions = new[] { "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH" };
+        var assigned = new Dictionary<string, (Player Starter, Player? Backup)>();
+        // Helper: track all roles for each player
+        var playerRoles = new Dictionary<Player, List<string>>();
+        for (int posIdx = 0; posIdx < positions.Length; posIdx++)
+        {
+            string pos = positions[posIdx];
+            Player? starter = null;
+            Player? backup = null;
+            // Starter selection
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine($"\n--- MANUAL FIELDING ASSIGNMENT FOR: {team.Name} ---");
+                Console.WriteLine($"Assign [Starter] for position: {pos}");
+                Console.WriteLine("--------------------------------------------------------------");
+                Console.WriteLine(" ID | Name                   | Positions   | Bat | Pit | Status");
+                Console.WriteLine("--------------------------------------------------------------");
+                for (int i = 0; i < team.Roster.Count; i++)
+                {
+                    var p = team.Roster[i];
+                    string status = "";
+                    if (playerRoles.ContainsKey(p))
+                        status = string.Join(" ", playerRoles[p]);
+                    string positionsStr = string.Join("/", p.Positions.Where(x => x != "None").Take(3));
+                    Console.WriteLine($" [{i + 1:D2}] | {p.Name,-22} | {positionsStr,-11} | {p.BattingRating,-3} | {p.PitchingRating,-3} | {status}");
+                }
+                Console.WriteLine($"\nSelect player by ID (1-{team.Roster.Count}) for [Starter] {pos}, [R]emove assignment, or [B] to cancel.");
+                string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
+                if (input == "B") return;
+                if (input == "R") {
+                    // Remove starter assignment for this position
+                    if (assigned.ContainsKey(pos) && assigned[pos].Starter != null) {
+                        var prevStarter = assigned[pos].Starter;
+                        if (playerRoles.ContainsKey(prevStarter))
+                            playerRoles[prevStarter].RemoveAll(r => r == $"Starter {pos}");
+                        assigned[pos] = (null!, assigned[pos].Backup);
+                        starter = null;
+                        Console.WriteLine($"Starter assignment for {pos} removed. Press any key to continue...");
+                        Console.ReadKey(true);
+                        break;
+                    } else {
+                        Console.WriteLine($"No starter assigned for {pos}. Press any key to continue...");
+                        Console.ReadKey(true);
+                    }
+                    continue;
+                }
+                if (int.TryParse(input, out int id) && id > 0 && id <= team.Roster.Count)
+                {
+                    starter = team.Roster[id - 1];
+                    if (!playerRoles.ContainsKey(starter)) playerRoles[starter] = new List<string>();
+                    if (!playerRoles[starter].Contains($"Starter {pos}"))
+                        playerRoles[starter].Add($"Starter {pos}");
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Invalid selection. Press any key to retry...");
+                    Console.ReadKey(true);
+                }
+            }
+            // Backup selection
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine($"\n--- MANUAL FIELDING ASSIGNMENT FOR: {team.Name} ---");
+                Console.WriteLine($"Assign [Back Up] for position: {pos}");
+                Console.WriteLine("--------------------------------------------------------------");
+                Console.WriteLine(" ID | Name                   | Positions   | Bat | Pit | Status");
+                Console.WriteLine("--------------------------------------------------------------");
+                for (int i = 0; i < team.Roster.Count; i++)
+                {
+                    var p = team.Roster[i];
+                    string status = "";
+                    if (playerRoles.ContainsKey(p))
+                        status = string.Join(" ", playerRoles[p]);
+                    string positionsStr = string.Join("/", p.Positions.Where(x => x != "None").Take(3));
+                    Console.WriteLine($" [{i + 1:D2}] | {p.Name,-22} | {positionsStr,-11} | {p.BattingRating,-3} | {p.PitchingRating,-3} | {status}");
+                }
+                Console.WriteLine($"\nSelect player by ID (1-{team.Roster.Count}) for [Back Up] {pos}, [R]emove assignment, [S]kip, or [B] to cancel.");
+                string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
+                if (input == "B") return;
+                if (input == "S") break;
+                if (input == "R") {
+                    // Remove backup assignment for this position
+                    if (assigned.ContainsKey(pos) && assigned[pos].Backup != null) {
+                        var prevBackup = assigned[pos].Backup;
+                        if (playerRoles.ContainsKey(prevBackup))
+                            playerRoles[prevBackup].RemoveAll(r => r == $"Back Up {pos}");
+                        assigned[pos] = (assigned[pos].Starter, null);
+                        backup = null;
+                        Console.WriteLine($"Backup assignment for {pos} removed. Press any key to continue...");
+                        Console.ReadKey(true);
+                        break;
+                    } else {
+                        Console.WriteLine($"No backup assigned for {pos}. Press any key to continue...");
+                        Console.ReadKey(true);
+                    }
+                    continue;
+                }
+                if (int.TryParse(input, out int id) && id > 0 && id <= team.Roster.Count)
+                {
+                    backup = team.Roster[id - 1];
+                    if (!playerRoles.ContainsKey(backup)) playerRoles[backup] = new List<string>();
+                    if (!playerRoles[backup].Contains($"Back Up {pos}"))
+                        playerRoles[backup].Add($"Back Up {pos}");
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Invalid selection. Press any key to retry...");
+                    Console.ReadKey(true);
+                }
+            }
+            assigned[pos] = (starter!, backup);
+        }
+        // Preview assignments
+        Console.WriteLine("\nManual Fielding Assignment Preview:");
+        foreach (var pos in positions)
+        {
+            if (assigned.ContainsKey(pos))
+            {
+                var pair = assigned[pos];
+                Console.WriteLine($" {pos}: [Starter] {pair.Starter.Name} ({string.Join("/", pair.Starter.Positions)}) Bat: {pair.Starter.BattingRating}");
+                if (pair.Backup != null)
+                    Console.WriteLine($"     [Back Up] {pair.Backup.Name} ({string.Join("/", pair.Backup.Positions)}) Bat: {pair.Backup.BattingRating}");
+            }
+            else
+            {
+                Console.WriteLine($" {pos}: [Not assigned]");
+            }
+        }
+        Console.Write("\nFinalize these assignments? (Y/N): ");
+        var confirm = Console.ReadKey(true).KeyChar.ToString().ToUpper();
+        if (confirm == "Y")
+        {
+            team.FieldingAssignments = assigned;
+            Console.WriteLine("\n[SUCCESS] Fielding assignments finalized.");
+        }
+        else
+        {
+            Console.WriteLine("\n[INFO] Fielding assignment canceled.");
+        }
+        Console.Write("Press any key to continue...");
+        Console.ReadKey(true);
     }
 
     // --- Manual Batting Order Selection ---
@@ -895,6 +1048,25 @@ public class SettingsScreen
             Console.ReadKey(true);
             return;
         }
+        // Only allow selection from finalized fielding assignment starters
+        List<Player> starters = new List<Player>();
+        Dictionary<string, Player> positionStarters = new Dictionary<string, Player>();
+        if (team.FieldingAssignments != null && team.FieldingAssignments.Count > 0)
+        {
+            foreach (var kvp in team.FieldingAssignments)
+            {
+                if (kvp.Value.Starter != null)
+                {
+                    positionStarters[kvp.Key] = kvp.Value.Starter;
+                }
+            }
+            starters = positionStarters.Values.Distinct().ToList();
+        }
+        else
+        {
+            starters = team.Roster.Take(9).ToList();
+        }
+
         List<Player> selected = new List<Player>();
         HashSet<int> selectedIndices = new HashSet<int>();
         while (selected.Count < 9)
@@ -902,31 +1074,46 @@ public class SettingsScreen
             Console.Clear();
             Console.WriteLine($"\n--- MANUAL BATTING ORDER FOR: {team.Name} ---");
             Console.WriteLine($" Players Selected: {selected.Count} / 9");
-            Console.WriteLine("--------------------------------------------------------------");
+            Console.WriteLine("\nAssigned Position Starters:");
+            Console.WriteLine(" Pos | Name                   | Bat | Pit");
+            Console.WriteLine("----------------------------------------------");
+            foreach (var pos in new[] { "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH" })
+            {
+                if (positionStarters.ContainsKey(pos))
+                {
+                    var p = positionStarters[pos];
+                    Console.WriteLine($" {pos,-3} | {p.Name,-22} | {p.BattingRating,-3} | {p.PitchingRating,-3}");
+                }
+                else
+                {
+                    Console.WriteLine($" {pos,-3} | [Not assigned]");
+                }
+            }
+            Console.WriteLine("\nSelect batting order from assigned starters below:");
             Console.WriteLine(" ID | Name                   | Positions   | Bat | Pit | Status");
             Console.WriteLine("--------------------------------------------------------------");
-            for (int i = 0; i < team.Roster.Count; i++)
+            for (int i = 0; i < starters.Count; i++)
             {
-                var p = team.Roster[i];
+                var p = starters[i];
                 string status = selectedIndices.Contains(i) ? "[SELECTED]" : " ";
                 string positions = string.Join("/", p.Positions.Where(pos => pos != "None").Take(3));
                 Console.WriteLine($" [{i + 1:D2}] | {p.Name,-22} | {positions,-11} | {p.BattingRating,-3} | {p.PitchingRating,-3} | {status}");
             }
-            Console.WriteLine("\nSelect player by ID (1-{0}), or [B] to cancel.", team.Roster.Count);
+            Console.WriteLine("\nSelect player by ID (1-{0}), or [B] to cancel.", starters.Count);
             string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
             if (input == "B") return;
-            if (int.TryParse(input, out int id) && id > 0 && id <= team.Roster.Count)
+            if (int.TryParse(input, out int id) && id > 0 && id <= starters.Count)
             {
                 int idx = id - 1;
                 if (selectedIndices.Contains(idx))
                 {
                     selectedIndices.Remove(idx);
-                    selected.Remove(team.Roster[idx]);
+                    selected.Remove(starters[idx]);
                 }
                 else if (selected.Count < 9)
                 {
                     selectedIndices.Add(idx);
-                    selected.Add(team.Roster[idx]);
+                    selected.Add(starters[idx]);
                 }
             }
         }
@@ -958,6 +1145,31 @@ public class SettingsScreen
     {
         Console.Clear();
         Console.WriteLine($"\n--- {team.Name} LINEUP & ROTATION ---");
+
+        // Assigned Position Players (Starters)
+        Console.WriteLine("\nAssigned Position Starters:");
+        Console.WriteLine(" Pos | Name                   | Bat | Pit");
+        Console.WriteLine("----------------------------------------------");
+        if (team.FieldingAssignments != null && team.FieldingAssignments.Count > 0)
+        {
+            foreach (var pos in new[] { "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH" })
+            {
+                if (team.FieldingAssignments.ContainsKey(pos) && team.FieldingAssignments[pos].Starter != null)
+                {
+                    var p = team.FieldingAssignments[pos].Starter;
+                    Console.WriteLine($" {pos,-3} | {p.Name,-22} | {p.BattingRating,-3} | {p.PitchingRating,-3}");
+                }
+                else
+                {
+                    Console.WriteLine($" {pos,-3} | [Not assigned]");
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine(" [No fielding assignments set]");
+        }
+
         Console.WriteLine("\nBatting Lineup:");
         if (team.BattingLineup.Count == 0)
             Console.WriteLine(" [Not set]");
@@ -967,6 +1179,7 @@ public class SettingsScreen
                 var p = team.BattingLineup[i];
                 Console.WriteLine($" {i + 1}: {p.Name} ({string.Join("/", p.Positions)}) Bat: {p.BattingRating}");
             }
+
         Console.WriteLine("\nPitching Rotation:");
         if (team.PitchingRotation.Count == 0)
             Console.WriteLine(" [Not set]");
@@ -976,6 +1189,7 @@ public class SettingsScreen
                 var p = team.PitchingRotation[i];
                 Console.WriteLine($" {i + 1}: {p.Name} ({string.Join("/", p.Positions)}) Pit: {p.PitchingRating}");
             }
+
         Console.Write("\nPress any key to return...");
         Console.ReadKey(true);
     }
@@ -1053,59 +1267,63 @@ public class SettingsScreen
         private void AutoAssignFieldingPositions(Team team)
         {
             Console.WriteLine("\n[AI] Auto-assigning fielding positions...");
-            var positions = new[] { "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF" };
-            var assigned = new Dictionary<string, Player>();
-            var used = new HashSet<Player>();
+            var positions = new[] { "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH" };
+            var assigned = new Dictionary<string, (Player Starter, Player? Backup)>();
+            // Track all roles for each player
+            var playerRoles = new Dictionary<Player, List<string>>();
             // Assign best matching players for each position
             foreach (var pos in positions)
             {
-                var candidates = team.Roster.Where(p => p.Positions.Contains(pos) && !used.Contains(p)).OrderByDescending(p => p.BattingRating).ToList();
-                Player selected = candidates.FirstOrDefault();
-                if (selected == null)
+                var candidates = team.Roster.Where(p => p.Positions.Contains(pos)).OrderByDescending(p => p.BattingRating).ToList();
+                Player? starter = null;
+                Player? backup = null;
+                if (candidates.Count > 0)
                 {
-                    // Out-of-position: pick best available
-                    var fallback = team.Roster.Where(p => !used.Contains(p)).OrderByDescending(p => p.BattingRating).FirstOrDefault();
-                    if (fallback != null)
+                    starter = candidates[0];
+                    if (!playerRoles.ContainsKey(starter)) playerRoles[starter] = new List<string>();
+                    playerRoles[starter].Add($"Starter {pos}");
+                    if (candidates.Count > 1)
                     {
-                        selected = fallback;
-                        Console.WriteLine($"[Penalty] {pos}: {selected.Name} assigned out-of-position.");
+                        backup = candidates[1];
+                        if (!playerRoles.ContainsKey(backup)) playerRoles[backup] = new List<string>();
+                        playerRoles[backup].Add($"Back Up {pos}");
                     }
-                }
-                if (selected != null)
-                {
-                    assigned[pos] = selected;
-                    used.Add(selected);
-                }
-            }
-            // DH: highest remaining BattingRating
-            var dhCandidate = team.Roster.Where(p => !used.Contains(p)).OrderByDescending(p => p.BattingRating).FirstOrDefault();
-            if (dhCandidate != null)
-            {
-                assigned["DH"] = dhCandidate;
-                used.Add(dhCandidate);
-            }
-            // Preview assignments
-            Console.WriteLine("\nFielding Assignments Preview:");
-            foreach (var pos in positions.Concat(new[] { "DH" }))
-            {
-                if (assigned.ContainsKey(pos))
-                {
-                    var p = assigned[pos];
-                    bool penalty = !p.Positions.Contains(pos);
-                    Console.WriteLine($" {pos}: {p.Name} (Bat: {p.BattingRating}){(penalty ? " [Out-of-Position Penalty]" : "")}");
                 }
                 else
                 {
-                    Console.WriteLine($" {pos}: [Unfilled]");
+                    // Out-of-position: pick best available
+                    var fallback = team.Roster.OrderByDescending(p => p.BattingRating).FirstOrDefault(p => !playerRoles.ContainsKey(p) || !playerRoles[p].Contains($"Starter {pos}"));
+                    if (fallback != null)
+                    {
+                        starter = fallback;
+                        if (!playerRoles.ContainsKey(starter)) playerRoles[starter] = new List<string>();
+                        playerRoles[starter].Add($"Starter {pos}");
+                        // Try to find another backup
+                        var backupFallback = team.Roster.OrderByDescending(p => p.BattingRating).FirstOrDefault(p => p != starter && (!playerRoles.ContainsKey(p) || !playerRoles[p].Contains($"Back Up {pos}")));
+                        if (backupFallback != null)
+                        {
+                            backup = backupFallback;
+                            if (!playerRoles.ContainsKey(backup)) playerRoles[backup] = new List<string>();
+                            playerRoles[backup].Add($"Back Up {pos}");
+                        }
+                    }
+                }
+                assigned[pos] = (starter!, backup);
+            }
+            // Preview assignments
+            Console.WriteLine("\nFielding Assignments Preview:");
+            foreach (var p in team.Roster)
+            {
+                if (playerRoles.ContainsKey(p))
+                {
+                    Console.WriteLine($" {p.Name}: {string.Join(" ", playerRoles[p])} (Bat: {p.BattingRating})");
                 }
             }
             Console.Write("\nFinalize these assignments? (Y/N): ");
             var confirm = Console.ReadKey(true).KeyChar.ToString().ToUpper();
             if (confirm == "Y")
             {
-                team.FieldingLineup.Clear();
-                foreach (var kvp in assigned)
-                    team.FieldingLineup[kvp.Key] = kvp.Value;
+                team.FieldingAssignments = assigned;
                 Console.WriteLine("\n[INFO] Fielding assignments finalized.");
             }
             else
@@ -1128,23 +1346,32 @@ public class SettingsScreen
                 int slot = orderSlots[i] - 1;
                 battingOrder[slot] = sorted[i];
             }
-            // Preview batting order
-            Console.WriteLine("\nBatting Order Preview:");
-            for (int i = 0; i < battingOrder.Count; i++)
+            // Only show preview for starters in finalized fielding assignments
+            List<Player> starters = new List<Player>();
+            if (team.FieldingAssignments != null && team.FieldingAssignments.Count > 0)
             {
-                var p = battingOrder[i];
-                if (p != null)
-                    Console.WriteLine($" {i + 1}: {p.Name} (Bat: {p.BattingRating})");
-                else
-                    Console.WriteLine($" {i + 1}: [Unfilled]");
+                starters = team.FieldingAssignments.Values
+                    .Where(pair => pair.Starter != null)
+                    .Select(pair => pair.Starter)
+                    .Distinct()
+                    .ToList();
+            }
+            else
+            {
+                starters = team.Roster.Take(9).ToList();
+            }
+            Console.WriteLine("\nBatting Order Preview:");
+            for (int i = 0; i < starters.Count; i++)
+            {
+                var p = starters[i];
+                Console.WriteLine($" {i + 1}: {p.Name} (Bat: {p.BattingRating})");
             }
             Console.Write("\nFinalize this batting order? (Y/N): ");
             var confirm = Console.ReadKey(true).KeyChar.ToString().ToUpper();
             if (confirm == "Y")
             {
                 team.BattingLineup.Clear();
-                foreach (var p in battingOrder)
-                    if (p != null) team.BattingLineup.Add(p);
+                team.BattingLineup.AddRange(starters);
                 Console.WriteLine("\n[INFO] Batting order finalized.");
             }
             else
@@ -1436,7 +1663,7 @@ public class SettingsScreen
             Console.WriteLine($" [M]enu Click: {_audioConfig.MenuClickSoundPath}");
             Console.WriteLine($" [L]oad Game:  {_audioConfig.PlayBallSoundPath}");
             Console.WriteLine($" [H]ome Run:   {_audioConfig.HomeRunSoundPath}");
-            Console.WriteLine($" [S]trikeout:  {_audioConfig.StrikeoutSoundPath}");
+            Console.WriteLine($" [S]strikeout:  {_audioConfig.StrikeoutSoundPath}");
             Console.WriteLine(" [B]ack to Settings Menu");
 
             Console.Write("Enter selection (M, L, H, S) or [B]: ");
@@ -1498,7 +1725,7 @@ public class SettingsScreen
             }
 
             Console.WriteLine("\n--- ASSIGN IMAGES ---");
-            Console.WriteLine(" [L]ogo to Team | [U]niform to Team | [B]ackground to Screen");
+            Console.WriteLine(" [L]ogo to Team | [U]Uniform to Team | [B]Background to Screen");
             Console.WriteLine(" [X]Back to Settings Menu");
 
             Console.Write("Enter selection (L, U, B, X): ");
@@ -1619,7 +1846,7 @@ public class SettingsScreen
     {
         if (imageFiles.Count == 0) return;
 
-        Console.WriteLine("\n--- ASSIGN BACKGROUND ---");
+    Console.WriteLine("\n--- ASSIGN BACKGROUND ---"); // Already correct, no change needed
         Console.WriteLine(" [1] Initial Screen | [2] Exhibition Setup | [3] Playoff Bracket");
 
         Console.Write("Select screen number: ");
@@ -1636,7 +1863,7 @@ public class SettingsScreen
                 _ => "Unknown Screen"
             };
             
-            Console.WriteLine($"\n[SUCCESS] Assigned {selectedFile} as background for {screenName}. (Global settings update placeholder)");
+            Console.WriteLine($"\n[SUCCESS] Assigned {selectedFile} as Background for {screenName}. (Global settings update placeholder)");
         }
         else
         {

@@ -30,3 +30,4 @@ C:\Users\danny\Danny Clayton Baseball Edition 1\YourSimProject\obj\Debug\net9.0\
 C:\Users\danny\Danny Clayton Baseball Edition 1\YourSimProject\obj\Debug\net9.0\YourSimProject.pdb
 C:\Users\danny\Danny Clayton Baseball Edition 1\YourSimProject\obj\Debug\net9.0\YourSimProject.genruntimeconfig.cache
 C:\Users\danny\Danny Clayton Baseball Edition 1\YourSimProject\obj\Debug\net9.0\ref\YourSimProject.dll
+C:\Users\danny\Danny Clayton Baseball Edition 1\YourSimProject\obj\Debug\net9.0\YourSimProject.sourcelink.json
