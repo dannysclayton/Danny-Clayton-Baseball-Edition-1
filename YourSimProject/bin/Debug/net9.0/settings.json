@@ -1,0 +1,14 @@
+{
+  "AudioConfig": {
+    "MenuClickSoundPath": "Audio/click.wav",
+    "PlayBallSoundPath": "Audio/playball.wav",
+    "StrikeoutSoundPath": "Audio/strikeout.wav",
+    "HomeRunSoundPath": "Audio/homerun.wav",
+    "UmpireCallPath": "Audio/out.wav"
+  },
+  "SystemConfig": {
+    "EnableSoundEffects": true,
+    "EnableTeamLogos": true,
+    "DefaultSaveLocation": "SavedSeasons"
+  }
+}

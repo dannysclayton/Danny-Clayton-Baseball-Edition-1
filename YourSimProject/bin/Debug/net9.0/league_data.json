@@ -1,0 +1,40 @@
+{
+  "Conferences": [
+    {
+      "Name": "West Conference",
+      "Regions": [
+        {
+          "Name": "Region 1 Texas Hill Country",
+          "ConferenceName": "West Conference",
+          "Teams": [
+            {
+              "Name": "Ballinger Bearcats",
+              "RegionName": "Region 1 Texas Hill Country",
+              "ConferenceName": "West Conference",
+              "Coach": null,
+              "Roster": [],
+              "Redshirts": [],
+              "FieldingLineup": {},
+              "BattingLineup": [],
+              "PitchingRotation": [],
+              "Wins": 0,
+              "Losses": 0,
+              "RegionWins": 0,
+              "RegionLosses": 0,
+              "RunsScored": 0,
+              "RunsAllowed": 0,
+              "GamesBehind": 0,
+              "LogoPath": null,
+              "UniformPath": null,
+              "TeamPhotoPath": null,
+              "TeamFieldingPhotoPath": null,
+              "TeamBattingPhotoPath": null,
+              "TeamPitchingPhotoPath": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "Coaches": []
+}

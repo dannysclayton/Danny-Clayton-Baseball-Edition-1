@@ -1,0 +1,30 @@
+{
+  "SetupSettings": {
+    "SeasonLength": "Series:2 | RegionalSeries:3 | RegionalGames:2",
+    "TeamStructure": "Loaded",
+    "TeamControl": "All User Control",
+    "HS_Qualifiers": "Wildcards: 2",
+    "Playoff_Series_Format": "Best of 5",
+    "Playoffs": "High School - Set"
+  },
+  "ControlType": null,
+  "PlayoffFormat": null,
+  "SeasonName": "1",
+  "ActiveConferences": [],
+  "AllActiveTeams": [],
+  "LastCompletedGameIndex": 0,
+  "FullSchedule": [],
+  "IsMidGameSave": false,
+  "CurrentGameState": {
+    "CurrentBatterName": null,
+    "CurrentPitcherName": null,
+    "CurrentInning": 0,
+    "Outs": 0,
+    "RunnersOnBases": 0,
+    "BattingTeamName": null,
+    "PitchingTeamName": null,
+    "ScoreHome": 0,
+    "ScoreAway": 0
+  },
+  "CareerStatPointers": {}
+}

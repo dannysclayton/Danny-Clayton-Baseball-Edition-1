@@ -1,0 +1,2 @@
+C:\Users\danny\Danny Clayton Baseball Edition 1\YourSimProject\bin\Release\net9.0\win-x64\publish\YourSimProject.pdb
+C:\Users\danny\Danny Clayton Baseball Edition 1\YourSimProject\bin\Release\net9.0\win-x64\publish\YourSimProject.exe
