@@ -909,16 +909,17 @@ public class SettingsScreen
                 Console.WriteLine("--------------------------------------------------------------");
                 Console.WriteLine(" ID | Name                   | Positions   | Bat | Pit | Status");
                 Console.WriteLine("--------------------------------------------------------------");
-                for (int i = 0; i < team.Roster.Count; i++)
+                var availablePlayers = team.Roster.Where(p => !p.IsRedshirted).ToList();
+                for (int i = 0; i < availablePlayers.Count; i++)
                 {
-                    var p = team.Roster[i];
+                    var p = availablePlayers[i];
                     string status = "";
                     if (playerRoles.ContainsKey(p))
                         status = string.Join(" ", playerRoles[p]);
                     string positionsStr = string.Join("/", p.Positions.Where(x => x != "None").Take(3));
                     Console.WriteLine($" [{i + 1:D2}] | {p.Name,-22} | {positionsStr,-11} | {p.BattingRating,-3} | {p.PitchingRating,-3} | {status}");
                 }
-                Console.WriteLine($"\nSelect player by ID (1-{team.Roster.Count}) for [Starter] {pos}, [R]emove assignment, or [B] to cancel.");
+                Console.WriteLine($"\nSelect player by ID (1-{availablePlayers.Count}) for [Starter] {pos}, [R]emove assignment, or [B] to cancel.");
                 string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
                 if (input == "B") return;
                 if (input == "R") {
@@ -938,9 +939,9 @@ public class SettingsScreen
                     }
                     continue;
                 }
-                if (int.TryParse(input, out int id) && id > 0 && id <= team.Roster.Count)
+                if (int.TryParse(input, out int id) && id > 0 && id <= availablePlayers.Count)
                 {
-                    starter = team.Roster[id - 1];
+                    starter = availablePlayers[id - 1];
                     if (!playerRoles.ContainsKey(starter)) playerRoles[starter] = new List<string>();
                     if (!playerRoles[starter].Contains($"Starter {pos}"))
                         playerRoles[starter].Add($"Starter {pos}");
@@ -961,16 +962,17 @@ public class SettingsScreen
                 Console.WriteLine("--------------------------------------------------------------");
                 Console.WriteLine(" ID | Name                   | Positions   | Bat | Pit | Status");
                 Console.WriteLine("--------------------------------------------------------------");
-                for (int i = 0; i < team.Roster.Count; i++)
+                var availablePlayers = team.Roster.Where(p => !p.IsRedshirted).ToList();
+                for (int i = 0; i < availablePlayers.Count; i++)
                 {
-                    var p = team.Roster[i];
+                    var p = availablePlayers[i];
                     string status = "";
                     if (playerRoles.ContainsKey(p))
                         status = string.Join(" ", playerRoles[p]);
                     string positionsStr = string.Join("/", p.Positions.Where(x => x != "None").Take(3));
                     Console.WriteLine($" [{i + 1:D2}] | {p.Name,-22} | {positionsStr,-11} | {p.BattingRating,-3} | {p.PitchingRating,-3} | {status}");
                 }
-                Console.WriteLine($"\nSelect player by ID (1-{team.Roster.Count}) for [Back Up] {pos}, [R]emove assignment, [S]kip, or [B] to cancel.");
+                Console.WriteLine($"\nSelect player by ID (1-{availablePlayers.Count}) for [Back Up] {pos}, [R]emove assignment, [S]kip, or [B] to cancel.");
                 string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
                 if (input == "B") return;
                 if (input == "S") break;
@@ -991,9 +993,9 @@ public class SettingsScreen
                     }
                     continue;
                 }
-                if (int.TryParse(input, out int id) && id > 0 && id <= team.Roster.Count)
+                if (int.TryParse(input, out int id) && id > 0 && id <= availablePlayers.Count)
                 {
-                    backup = team.Roster[id - 1];
+                    backup = availablePlayers[id - 1];
                     if (!playerRoles.ContainsKey(backup)) playerRoles[backup] = new List<string>();
                     if (!playerRoles[backup].Contains($"Back Up {pos}"))
                         playerRoles[backup].Add($"Back Up {pos}");
@@ -1095,8 +1097,13 @@ public class SettingsScreen
             for (int i = 0; i < starters.Count; i++)
             {
                 var p = starters[i];
-                string status = selectedIndices.Contains(i) ? "[SELECTED]" : " ";
                 string positions = string.Join("/", p.Positions.Where(pos => pos != "None").Take(3));
+                string status = " ";
+                int batterNum = selected.IndexOf(p);
+                if (batterNum >= 0)
+                {
+                    status = $"Batter number {batterNum + 1}";
+                }
                 Console.WriteLine($" [{i + 1:D2}] | {p.Name,-22} | {positions,-11} | {p.BattingRating,-3} | {p.PitchingRating,-3} | {status}");
             }
             Console.WriteLine("\nSelect player by ID (1-{0}), or [B] to cancel.", starters.Count);
@@ -1274,7 +1281,7 @@ public class SettingsScreen
             // Assign best matching players for each position
             foreach (var pos in positions)
             {
-                var candidates = team.Roster.Where(p => p.Positions.Contains(pos)).OrderByDescending(p => p.BattingRating).ToList();
+                var candidates = team.Roster.Where(p => !p.IsRedshirted && p.Positions.Contains(pos)).OrderByDescending(p => p.BattingRating).ToList();
                 Player? starter = null;
                 Player? backup = null;
                 if (candidates.Count > 0)
@@ -1292,14 +1299,14 @@ public class SettingsScreen
                 else
                 {
                     // Out-of-position: pick best available
-                    var fallback = team.Roster.OrderByDescending(p => p.BattingRating).FirstOrDefault(p => !playerRoles.ContainsKey(p) || !playerRoles[p].Contains($"Starter {pos}"));
+                    var fallback = team.Roster.Where(p => !p.IsRedshirted).OrderByDescending(p => p.BattingRating).FirstOrDefault(p => !playerRoles.ContainsKey(p) || !playerRoles[p].Contains($"Starter {pos}"));
                     if (fallback != null)
                     {
                         starter = fallback;
                         if (!playerRoles.ContainsKey(starter)) playerRoles[starter] = new List<string>();
                         playerRoles[starter].Add($"Starter {pos}");
                         // Try to find another backup
-                        var backupFallback = team.Roster.OrderByDescending(p => p.BattingRating).FirstOrDefault(p => p != starter && (!playerRoles.ContainsKey(p) || !playerRoles[p].Contains($"Back Up {pos}")));
+                        var backupFallback = team.Roster.Where(p => !p.IsRedshirted).OrderByDescending(p => p.BattingRating).FirstOrDefault(p => p != starter && (!playerRoles.ContainsKey(p) || !playerRoles[p].Contains($"Back Up {pos}")));
                         if (backupFallback != null)
                         {
                             backup = backupFallback;

@@ -436,7 +436,7 @@
                 },
                 {
                   "TeamName": "Ballinger Bearcats",
-                  "Name": "Griffin Sims",
+                  "Name": "Tanner Sims",
                   "ClassLevel": "Sophomore",
                   "Positions": [
                     "2B",
@@ -981,15 +981,15 @@
                 },
                 {
                   "TeamName": "Ballinger Bearcats",
-                  "Name": "Jon Marcon",
+                  "Name": "Michael Keene",
                   "ClassLevel": "Senior",
                   "Positions": [
-                    "P",
-                    "SS",
+                    "CF",
+                    "None",
                     "None"
                   ],
                   "BattingRating": 9,
-                  "PitchingRating": 9,
+                  "PitchingRating": 4,
                   "ClassModifier": 3,
                   "EligibleSeasons": 0,
                   "IsRedshirted": false,
@@ -1027,39 +1027,16 @@
                 },
                 {
                   "TeamName": "Ballinger Bearcats",
-                  "Name": "Michael Keene",
-                  "ClassLevel": "Senior",
+                  "Name": "Cade Garza",
+                  "ClassLevel": "Junior",
                   "Positions": [
-                    "CF",
-                    "None",
-                    "None"
-                  ],
-                  "BattingRating": 9,
-                  "PitchingRating": 4,
-                  "ClassModifier": 3,
-                  "EligibleSeasons": 0,
-                  "IsRedshirted": false,
-                  "PositionAtBats": {},
-                  "ErrorAccumulator": 0,
-                  "BalkWildPitchAccumulator": 0,
-                  "PickoffAccumulator": 0,
-                  "StrikeoutBonus": 0,
-                  "DoubleBonus": 0,
-                  "TripleBonus": 0,
-                  "HomeRunBonus": 0
-                },
-                {
-                  "TeamName": "Ballinger Bearcats",
-                  "Name": "Ryan  Luera",
-                  "ClassLevel": "Senior",
-                  "Positions": [
-                    "LF",
+                    "C",
                     "None",
                     "None"
                   ],
                   "BattingRating": 8,
-                  "PitchingRating": 1,
-                  "ClassModifier": 3,
+                  "PitchingRating": 4,
+                  "ClassModifier": 2,
                   "EligibleSeasons": 0,
                   "IsRedshirted": false,
                   "PositionAtBats": {},
@@ -1096,16 +1073,16 @@
                 },
                 {
                   "TeamName": "Ballinger Bearcats",
-                  "Name": "Griffin Sims",
-                  "ClassLevel": "Junior",
+                  "Name": "Ryan  Luera",
+                  "ClassLevel": "Senior",
                   "Positions": [
-                    "SS",
+                    "LF",
                     "None",
                     "None"
                   ],
                   "BattingRating": 8,
-                  "PitchingRating": 4,
-                  "ClassModifier": 2,
+                  "PitchingRating": 1,
+                  "ClassModifier": 3,
                   "EligibleSeasons": 0,
                   "IsRedshirted": false,
                   "PositionAtBats": {},
@@ -1128,6 +1105,29 @@
                   ],
                   "BattingRating": 8,
                   "PitchingRating": 3,
+                  "ClassModifier": 2,
+                  "EligibleSeasons": 0,
+                  "IsRedshirted": false,
+                  "PositionAtBats": {},
+                  "ErrorAccumulator": 0,
+                  "BalkWildPitchAccumulator": 0,
+                  "PickoffAccumulator": 0,
+                  "StrikeoutBonus": 0,
+                  "DoubleBonus": 0,
+                  "TripleBonus": 0,
+                  "HomeRunBonus": 0
+                },
+                {
+                  "TeamName": "Ballinger Bearcats",
+                  "Name": "Tucker Travis",
+                  "ClassLevel": "Junior",
+                  "Positions": [
+                    "3B",
+                    "2B",
+                    "None"
+                  ],
+                  "BattingRating": 7,
+                  "PitchingRating": 1,
                   "ClassModifier": 2,
                   "EligibleSeasons": 0,
                   "IsRedshirted": false,
@@ -1190,6 +1190,29 @@
                 },
                 {
                   "TeamName": "Ballinger Bearcats",
+                  "Name": "Cj Moreno",
+                  "ClassLevel": "Senior",
+                  "Positions": [
+                    "P",
+                    "1B",
+                    "None"
+                  ],
+                  "BattingRating": 5,
+                  "PitchingRating": 9,
+                  "ClassModifier": 3,
+                  "EligibleSeasons": 0,
+                  "IsRedshirted": false,
+                  "PositionAtBats": {},
+                  "ErrorAccumulator": 0,
+                  "BalkWildPitchAccumulator": 0,
+                  "PickoffAccumulator": 0,
+                  "StrikeoutBonus": 0,
+                  "DoubleBonus": 0,
+                  "TripleBonus": 0,
+                  "HomeRunBonus": 0
+                },
+                {
+                  "TeamName": "Ballinger Bearcats",
                   "Name": "Tyler Lange",
                   "ClassLevel": "Senior",
                   "Positions": [
@@ -1213,37 +1236,14 @@
                 },
                 {
                   "TeamName": "Ballinger Bearcats",
-                  "Name": "Ely  Self",
-                  "ClassLevel": "Senior",
-                  "Positions": [
-                    "LF",
-                    "P",
-                    "None"
-                  ],
-                  "BattingRating": 5,
-                  "PitchingRating": 9,
-                  "ClassModifier": 3,
-                  "EligibleSeasons": 0,
-                  "IsRedshirted": false,
-                  "PositionAtBats": {},
-                  "ErrorAccumulator": 0,
-                  "BalkWildPitchAccumulator": 0,
-                  "PickoffAccumulator": 0,
-                  "StrikeoutBonus": 0,
-                  "DoubleBonus": 0,
-                  "TripleBonus": 0,
-                  "HomeRunBonus": 0
-                },
-                {
-                  "TeamName": "Ballinger Bearcats",
-                  "Name": "Cj Moreno",
+                  "Name": "Jon Marcon",
                   "ClassLevel": "Senior",
                   "Positions": [
                     "P",
-                    "1B",
+                    "SS",
                     "None"
                   ],
-                  "BattingRating": 5,
+                  "BattingRating": 9,
                   "PitchingRating": 9,
                   "ClassModifier": 3,
                   "EligibleSeasons": 0,
@@ -1978,31 +1978,18 @@
               ],
               "Redshirts": [],
               "FieldingLineup": {},
-              "FieldingAssignments": {},
+              "FieldingAssignments": {
+                "C": {},
+                "1B": {},
+                "2B": {},
+                "3B": {},
+                "SS": {},
+                "LF": {},
+                "CF": {},
+                "RF": {},
+                "DH": {}
+              },
               "BattingLineup": [
-                {
-                  "TeamName": "Burnet Bulldogs",
-                  "Name": "Tyler Rockafellow",
-                  "ClassLevel": "Senior",
-                  "Positions": [
-                    "P",
-                    "1B",
-                    "None"
-                  ],
-                  "BattingRating": 9,
-                  "PitchingRating": 9,
-                  "ClassModifier": 3,
-                  "EligibleSeasons": 0,
-                  "IsRedshirted": false,
-                  "PositionAtBats": {},
-                  "ErrorAccumulator": 0,
-                  "BalkWildPitchAccumulator": 0,
-                  "PickoffAccumulator": 0,
-                  "StrikeoutBonus": 0,
-                  "DoubleBonus": 0,
-                  "TripleBonus": 0,
-                  "HomeRunBonus": 0
-                },
                 {
                   "TeamName": "Burnet Bulldogs",
                   "Name": "Cj Gilbert",
