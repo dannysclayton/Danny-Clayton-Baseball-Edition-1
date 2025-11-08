@@ -8,6 +8,7 @@ namespace YourSimProject.WinForms
         [STAThread]
         static void Main()
         {
+            AppBootstrap.Initialize();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainMenuForm());

@@ -53,11 +53,11 @@ namespace YourSimProject.WinForms
             return b;
         }
 
-        private void OnSeason(object? sender, EventArgs e) => Placeholder("Season screen not wired yet.");
-        private void OnUpload(object? sender, EventArgs e) => Placeholder("Upload screen not wired yet.");
-        private void OnExhibition(object? sender, EventArgs e) => Placeholder("Exhibition screen not wired yet.");
-        private void OnSettings(object? sender, EventArgs e) => Placeholder("Settings screen not wired yet.");
-        private void OnLoadSave(object? sender, EventArgs e) => Placeholder("Load/Save screen not wired yet.");
+    private void OnSeason(object? sender, EventArgs e) => new SeasonForm(AppBootstrap.Engine).ShowDialog(this);
+    private void OnUpload(object? sender, EventArgs e) => new UploadForm().ShowDialog(this);
+    private void OnExhibition(object? sender, EventArgs e) => new ExhibitionForm(AppBootstrap.Engine).ShowDialog(this);
+    private void OnSettings(object? sender, EventArgs e) => new SettingsForm(AppBootstrap.Engine).ShowDialog(this);
+    private void OnLoadSave(object? sender, EventArgs e) => new LoadSaveForm().ShowDialog(this);
         private void OnExit(object? sender, EventArgs e) => Close();
 
         private void Placeholder(string message)
