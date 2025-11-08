@@ -2,15 +2,12 @@
 using YourSimProject.Services;
 using System;
 using System.IO;
-// Removed EPPlus dependency; using ClosedXML for Excel operations now.
+// Using ClosedXML for Excel operations.
 using YourSimProject; // For GameLoopScreen and other screens in namespace
 
 public class Program
 {
-    // --- NEW: Set EPPlus License before any other class uses it ---
-    // This resolves the persistent runtime license error.
-    // EPPlus 8+ license assignment removed. Set license via configuration or environment variable if needed.
-    // ------------------------------------------------------------------
+    // Legacy EPPlus license setup comments removed during dependency cleanup.
 
     private static readonly GameEngine Engine = new();
     

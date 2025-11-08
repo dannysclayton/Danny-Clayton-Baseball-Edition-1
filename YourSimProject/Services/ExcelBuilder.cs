@@ -4,8 +4,7 @@ using System.Collections.Generic;
 using YourSimProject.Models;
 // Reporting abstraction added below (IWorkbookWriter + ClosedXmlWorkbookWriter)
 
-// Set the EPPlus license context
-// NOTE: EPPlus requires this line for non-commercial use since version 5.
+// EPPlus migration complete; removed license context comments.
 namespace YourSimProject.Services
 {
 public class ExcelBuilder
