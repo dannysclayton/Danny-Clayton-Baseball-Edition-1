@@ -1,3 +1,5 @@
+using YourSimProject.Models;
+using YourSimProject.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,74 +7,76 @@ using System.Linq;
 
 // NOTE: PlayerService is now in its own file: Services/PlayerService.cs
 
-public class UploadScreen
+namespace YourSimProject
 {
-    // Stub for missing method to fix build error
-    private void HandleDataFileAssignment(string assetType, string filePath)
+    public class UploadScreen
     {
-        Console.WriteLine($"[STUB] HandleDataFileAssignment called for {assetType} with file {filePath}.");
-        // TODO: Implement actual logic for assigning data files to assets
-    }
-    private readonly GameEngine _engine;
-    private readonly TeamDatabase _teamDatabase; 
-    private readonly PlayerService _playerService; 
-
-    public UploadScreen(GameEngine engine, TeamDatabase teamDatabase)
-    {
-        _engine = engine;
-        _teamDatabase = teamDatabase;
-        // The service must be initialized before use
-        _playerService = new PlayerService(); 
-    }
-
-    public void DisplayAndHandle()
-    {
-        while (true)
+        // Stub for missing method to fix build error
+        private void HandleDataFileAssignment(string assetType, string filePath)
         {
-            Console.Clear();
-            Console.WriteLine("\n--- 2ND BASE: UPLOAD ASSETS ---");
-            Console.WriteLine($"--- Current League Status: {_teamDatabase.Conferences.Sum(c => c.Regions.Count)} Regions Loaded ---");
+            Console.WriteLine($"[STUB] HandleDataFileAssignment called for {assetType} with file {filePath}.");
+            // TODO: Implement actual logic for assigning data files to assets
+        }
+        private readonly GameEngine _engine;
+        private readonly TeamDatabase _teamDatabase; 
+        private readonly PlayerService _playerService; 
 
-            Console.WriteLine("\n--- DATA ASSET UPLOAD (.XML, .JSON, .CSV) ---");
-            Console.WriteLine(" [1] Upload Conferences/Regions/Teams Structure");
-            Console.WriteLine(" [2] Upload Players Data (Assign to Team)");
-            Console.WriteLine(" [3] Upload Coaches Data (Assign to Team)");
+        public UploadScreen(GameEngine engine, TeamDatabase teamDatabase)
+        {
+            _engine = engine;
+            _teamDatabase = teamDatabase;
+            // The service must be initialized before use
+            _playerService = new PlayerService(); 
+        }
 
-            Console.WriteLine("\n--- MEDIA ASSET UPLOAD ---");
-            Console.WriteLine(" [4] Upload Audio Files (.WAV, .MP3)");
-            Console.WriteLine(" [5] Upload Team Images (.JPG, .PNG)");
-
-            Console.WriteLine(" [B] Back to Main Menu");
-
-            Console.Write("Enter selection: ");
-            string input = Console.ReadKey(true).KeyChar.ToString().ToUpper();
-            _engine.PlayClickSound();
-            Console.WriteLine();
-
-            if (input == "B")
+        public void DisplayAndHandle()
+        {
+            while (true)
             {
-                _engine.NavigateTo(GameEngine.SCREEN_MAIN_MENU);
-                return;
-            }
+                Console.Clear();
+                Console.WriteLine("\n--- 2ND BASE: UPLOAD ASSETS ---");
+                Console.WriteLine($"--- Current League Status: {_teamDatabase.Conferences.Sum(c => c.Regions.Count)} Regions Loaded ---");
 
-            string filePath = PromptForFilePath();
-            if (string.IsNullOrWhiteSpace(filePath)) continue;
+                Console.WriteLine("\n--- DATA ASSET UPLOAD (.XML, .JSON, .CSV) ---");
+                Console.WriteLine(" [1] Upload Conferences/Regions/Teams Structure");
+                Console.WriteLine(" [2] Upload Players Data (Assign to Team)");
+                Console.WriteLine(" [3] Upload Coaches Data (Assign to Team)");
 
-            string fileName = Path.GetFileName(filePath);
-            Console.WriteLine($"\nFile selected: {fileName}");
-            
-            // --- Display the file preview here ---
-            DisplayFilePreview(filePath);
+                Console.WriteLine("\n--- MEDIA ASSET UPLOAD ---");
+                Console.WriteLine(" [4] Upload Audio Files (.WAV, .MP3)");
+                Console.WriteLine(" [5] Upload Team Images (.JPG, .PNG)");
 
-            Console.Write($"Confirm upload of {fileName}? (Y/N): ");
-            if (Console.ReadKey(true).KeyChar.ToString().ToUpper() != "Y") continue;
-            
-            Console.WriteLine();
+                Console.WriteLine(" [B] Back to Main Menu");
 
-            // Handle asset-specific logic
-            switch (input)
-            {
-                case "1":
+                Console.Write("Enter selection: ");
+                string input = Console.ReadKey(true).KeyChar.ToString().ToUpper();
+                _engine.PlayClickSound();
+                Console.WriteLine();
+
+                if (input == "B")
+                {
+                    _engine.NavigateTo(GameEngine.SCREEN_MAIN_MENU);
+                    return;
+                }
+
+                string filePath = PromptForFilePath();
+                if (string.IsNullOrWhiteSpace(filePath)) continue;
+
+                string fileName = Path.GetFileName(filePath);
+                Console.WriteLine($"\nFile selected: {fileName}");
+
+                // --- Display the file preview here ---
+                DisplayFilePreview(filePath);
+
+                Console.Write($"Confirm upload of {fileName}? (Y/N): ");
+                if (Console.ReadKey(true).KeyChar.ToString().ToUpper() != "Y") continue;
+
+                Console.WriteLine();
+
+                // Handle asset-specific logic
+                switch (input)
+                {
+                    case "1":
                     HandleStructureUpload(filePath);
                     break;
                 case "2":
@@ -112,15 +116,15 @@ public class UploadScreen
         Console.WriteLine("\n--- ASSIGN PLAYERS DATA ---");
 
         // 1. Select Target Team
-        string conferenceName = SelectConference();
-        if (conferenceName == null) return;
-        string regionName = SelectRegion(conferenceName);
-        if (regionName == null) return;
-        string teamName = SelectTeam(conferenceName, regionName);
-        if (teamName == null) return;
+    string? conferenceName = SelectConference();
+    if (conferenceName == null) return;
+    string? regionName = SelectRegion(conferenceName);
+    if (regionName == null) return;
+    string? teamName = SelectTeam(conferenceName, regionName);
+    if (teamName == null) return;
         
-        Team targetTeam = _teamDatabase.GetTeam(teamName);
-        if (targetTeam == null) return; // Safety check
+    Team? targetTeam = _teamDatabase.GetTeam(teamName);
+    if (targetTeam == null) return; // Safety check
 
         // 2. Simulate Reading ALL potential players from the file (100 total)
         // In a real app, this would use a dedicated PlayerDataParser.
@@ -394,7 +398,7 @@ public class UploadScreen
     /// </summary>
     private void DisplayFilePreview(string filePath)
     {
-        string extension = Path.GetExtension(filePath)?.ToLower();
+        string extension = (Path.GetExtension(filePath) ?? string.Empty).ToLowerInvariant();
 
         Console.WriteLine("\n--- FILE PREVIEW ---");
 
@@ -448,10 +452,10 @@ public class UploadScreen
         }
     }
 
-    private string SelectConference()
+    private string? SelectConference()
     {
         var conferenceNames = _teamDatabase.GetConferenceNames().ToList();
-        if (conferenceNames.Count == 0) return null;
+    if (conferenceNames.Count == 0) return null;
 
         Console.WriteLine("\nSelect Conference:");
         for (int i = 0; i < conferenceNames.Count; i++)
@@ -464,13 +468,13 @@ public class UploadScreen
         {
             return conferenceNames[confIndex - 1];
         }
-        Console.WriteLine("Invalid selection or back requested.");
-        return null;
+    Console.WriteLine("Invalid selection or back requested.");
+    return null;
     }
 
-    private string SelectRegion(string conferenceName)
+    private string? SelectRegion(string conferenceName)
     {
-        var conference = _teamDatabase.Conferences.FirstOrDefault(c => c.Name == conferenceName);
+    var conference = _teamDatabase.Conferences.FirstOrDefault(c => c.Name == conferenceName);
         var regionList = conference?.Regions;
 
         if (regionList == null || regionList.Count == 0)
@@ -490,11 +494,11 @@ public class UploadScreen
         {
             return regionList[regIndex - 1].Name;
         }
-        Console.WriteLine("Invalid selection or back requested.");
-        return null;
+    Console.WriteLine("Invalid selection or back requested.");
+    return null;
     }
 
-    private string SelectTeam(string conferenceName, string regionName)
+    private string? SelectTeam(string conferenceName, string regionName)
     {
         var teamList = _teamDatabase.Conferences
             .FirstOrDefault(c => c.Name == conferenceName)?
@@ -518,8 +522,8 @@ public class UploadScreen
         {
             return teamList[teamIndex - 1].Name;
         }
-        Console.WriteLine("Invalid selection or back requested.");
-        return null;
+    Console.WriteLine("Invalid selection or back requested.");
+    return null;
     }
     
     private string PromptForFilePath()
@@ -547,7 +551,7 @@ public class UploadScreen
     private void HandleMediaFileTransfer(string sourcePath, string destinationFolder, string expectedFormats)
     {
         string fileName = Path.GetFileName(sourcePath);
-        string extension = Path.GetExtension(sourcePath)?.ToLower().TrimStart('.');
+        string extension = (Path.GetExtension(sourcePath) ?? string.Empty).ToLower().TrimStart('.');
 
         var validExtensions = expectedFormats
             .Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
@@ -559,6 +563,7 @@ public class UploadScreen
             return;
         }
 
-        Console.WriteLine($"\n[SUCCESS] Media file {Path.GetFileName(sourcePath)} transferred (conceptually) to /{destinationFolder}/.");
+    Console.WriteLine($"\n[SUCCESS] Media file {Path.GetFileName(sourcePath)} transferred (conceptually) to /{destinationFolder}/.");
+}
     }
 }

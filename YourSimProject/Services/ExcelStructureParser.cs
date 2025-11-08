@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using OfficeOpenXml; // Used only for XLSX files
+using ClosedXML.Excel; // Using ClosedXML for XLSX parsing
+using YourSimProject.Models;
 
+namespace YourSimProject.Services
+{
 public class ExcelStructureParser
 {
-    // EPPlus 8+ license is set via environment variable. No code assignment required.
+    // ClosedXML requires no license context setup for typical usage.
 
     /// <summary>
     /// Parses the league structure from an XLSX or a text-based CSV file.
@@ -23,7 +26,7 @@ public class ExcelStructureParser
 
         if (extension == ".xlsx")
         {
-            // --- LOGIC 1: EPPLUS for XLSX files (Package format) ---
+            // --- LOGIC 1: ClosedXML for XLSX files ---
             structureLines = ReadXlsxFile(filePath);
         }
         else if (extension == ".csv" || extension == ".txt")
@@ -45,30 +48,26 @@ public class ExcelStructureParser
     }
     
     /// <summary>
-    /// Uses EPPlus to extract cell values from the first column of the first sheet.
+    /// Uses ClosedXML to extract cell values from the first column of the first sheet.
     /// </summary>
     private List<string> ReadXlsxFile(string filePath)
     {
         var lines = new List<string>();
         try
         {
-            using (var package = new ExcelPackage(new FileInfo(filePath)))
+            using var workbook = new XLWorkbook(filePath);
+            var sheet = workbook.Worksheets.First();
+            foreach (var row in sheet.RowsUsed())
             {
-                var sheet = package.Workbook.Worksheets.First();
-                for (int row = sheet.Dimension.Start.Row; row <= sheet.Dimension.End.Row; row++)
+                var cellValue = row.Cell(1).GetString();
+                if (!string.IsNullOrWhiteSpace(cellValue))
                 {
-                    // Read only the value from the first column (Column 1)
-                    var cellValue = sheet.Cells[row, 1].Text;
-                    if (!string.IsNullOrWhiteSpace(cellValue))
-                    {
-                        lines.Add(cellValue);
-                    }
+                    lines.Add(cellValue);
                 }
             }
         }
         catch (Exception ex)
         {
-            // Catch EPPlus specific errors related to invalid package format
             throw new InvalidDataException($"Failed to read Excel file '{Path.GetFileName(filePath)}'. Details: {ex.Message}");
         }
         return lines;
@@ -80,9 +79,9 @@ public class ExcelStructureParser
     /// </summary>
     private List<Conference> ProcessStructureLines(List<string> lines)
     {
-        var conferences = new List<Conference>();
-        Conference currentConference = null;
-        Region currentRegion = null;
+    var conferences = new List<Conference>();
+    Conference? currentConference = null;
+    Region? currentRegion = null;
 
         foreach (var line in lines)
         {
@@ -135,4 +134,5 @@ public class ExcelStructureParser
         
         return conferences;
     }
+}
 }

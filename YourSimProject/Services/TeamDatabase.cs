@@ -5,7 +5,10 @@ using System.IO;
 using System.Text.Json;
 
 // The 'partial' keyword is essential if parts of this class exist in other files.
-public partial class TeamDatabase
+using YourSimProject.Models;
+namespace YourSimProject.Services
+{
+    public partial class TeamDatabase
 {
     // FIX: Ensure public set access for JSON deserialization of complex objects.
     public List<Conference> Conferences { get; set; } = new();
@@ -24,7 +27,7 @@ public partial class TeamDatabase
         Conferences = parser.ParseStructure(filePath);
     }
 
-    public Team GetTeam(string name)
+    public Team? GetTeam(string name)
     {
         // Use StringComparison.OrdinalIgnoreCase for robust lookup regardless of case
         return Conferences
@@ -107,4 +110,5 @@ public partial class TeamDatabase
         // Method required by SettingsScreen.cs to list coaches
         return Coaches;
     }
+}
 }

@@ -1,3 +1,4 @@
+using YourSimProject.Models;
 
 using System;
 using System.Media;
@@ -7,6 +8,13 @@ using System.Linq;
 
 public class GameEngine
 {
+    /// <summary>
+    /// Gets a team by name (case-insensitive). For compatibility with GameLoopScreen.
+    /// </summary>
+    public Team? GetTeamByName(string name)
+    {
+        return FindTeamByName(name);
+    }
     // Collection of all teams in the game
     public List<Team> Teams { get; set; } = new List<Team>();
 
@@ -30,6 +38,9 @@ public class GameEngine
     private const string PLAY_BALL_SOUND_PATH = "Audio/playball.wav";
 
     public string CurrentScreen { get; private set; } = SCREEN_MAIN_MENU;
+
+    // Runtime-selected export format (mirrors SystemConfig.WorkbookExportFormat on load)
+    public YourSimProject.Models.ExportFormat ExportFormat { get; set; } = YourSimProject.Models.ExportFormat.Xlsx;
 
     public void PlayClickSound()
     {

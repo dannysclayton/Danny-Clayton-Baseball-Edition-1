@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq; 
+using YourSimProject.Services;
+using YourSimProject;
 
 // NOTE: This class assumes the existence of the SeasonDataService, SeasonState, GameEngine, and other models.
 public class SeasonScreen
@@ -104,13 +106,13 @@ public class SeasonScreen
     private void PickSeasonLength()
     {
         Console.Write("\nLength of series vs other region's teams (1=1 Game, 2=3 Games, 3=5 Games): ");
-        string input1 = Console.ReadLine();
+    string input1 = Console.ReadLine() ?? "";
         
         Console.Write("Number of series vs opponents in the same region (1=2 Series, 2=3 Series, 3=5 Series): ");
-        string input2 = Console.ReadLine();
+    string input2 = Console.ReadLine() ?? "";
         
         Console.Write("Number of games in each series vs same region opponents (1=3 Games, 2=5 Games, 3=6 Games): ");
-        string input3 = Console.ReadLine();
+    string input3 = Console.ReadLine() ?? "";
         
         tempSeasonSettings["SeasonLength"] = $"Series:{input1} | RegionalSeries:{input2} | RegionalGames:{input3}";
         
@@ -148,8 +150,8 @@ public class SeasonScreen
         Console.WriteLine(" 5. Simulation"); 
 
         Console.Write("Select Control Type: ");
-        string input = Console.ReadLine();
-        tempSeasonSettings["TeamControl"] = input;
+    string input = Console.ReadLine() ?? "";
+    tempSeasonSettings["TeamControl"] = input;
     }
 
     private void PickPlayoffSettings()
@@ -291,7 +293,7 @@ public class SeasonScreen
         }
         
         Console.Write("Enter Season Name to Save: ");
-        string seasonName = Console.ReadLine();
+    string seasonName = Console.ReadLine() ?? "";
 
         if (string.IsNullOrWhiteSpace(seasonName))
         {
@@ -349,7 +351,7 @@ public class SeasonScreen
         if (int.TryParse(input, out int selectionIndex) && selectionIndex > 0 && selectionIndex <= savedSeasons.Count)
         {
             string selectedName = savedSeasons[selectionIndex - 1];
-            SeasonState loadedState = _dataService.LoadSeason(selectedName);
+            SeasonState? loadedState = _dataService.LoadSeason(selectedName);
             
             if (loadedState != null)
             {

@@ -1,4 +1,9 @@
+using System.Collections.Generic;
+using System.Linq;
+using System;
 
+namespace YourSimProject.Models
+{
 public class Team
 {
     public required string Name { get; set; }
@@ -32,4 +37,5 @@ public class Team
     public required string TeamFieldingPhotoPath { get; set; }
     public required string TeamBattingPhotoPath { get; set; }
     public required string TeamPitchingPhotoPath { get; set; }
+}
 }

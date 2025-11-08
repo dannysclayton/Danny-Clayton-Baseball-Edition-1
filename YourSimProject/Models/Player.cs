@@ -2,8 +2,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 
+namespace YourSimProject.Models
+{
 public class Player
 {
+    // --- Season Performance Bonuses ---
+    public double PitcherPerformanceBonus { get; set; } // Accumulates scoreless innings, strikeouts, etc.
+    public double HitterPerformanceBonus { get; set; } // Accumulates hits, home runs, etc.
+
+    // Resets all season bonuses (call at season end)
+    public void ResetSeasonBonuses()
+    {
+        PitcherPerformanceBonus = 0;
+        HitterPerformanceBonus = 0;
+        StrikeoutBonus = 0;
+        DoubleBonus = 0;
+        TripleBonus = 0;
+        HomeRunBonus = 0;
+    }
     // --- Core Identity (MUST have public set for JSON persistence) ---
     public string TeamName { get; set; } = "Unassigned"; // The team the player is currently assigned to (Fixes persistence)
     public string Name { get; set; } = "New Player";
@@ -45,4 +61,12 @@ public class Player
     public double DoubleBonus { get; set; }
     public double TripleBonus { get; set; }
     public double HomeRunBonus { get; set; }
+    // Spectacular play chance accumulator (season)
+    public double SpectacularPlayAccumulator { get; set; }
+    // Clutch label for pitchers (season flag)
+    public bool IsClutch { get; set; }
+    // Season bonuses (optional use)
+    public int SeasonPitchCapacityBonus { get; set; }
+    public int SeasonRatingBonus { get; set; }
+}
 }

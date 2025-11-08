@@ -1,271 +1,326 @@
+using YourSimProject.Models;
+using YourSimProject.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq; 
 using System.Text.Json; 
+using System.Text.Json.Serialization; 
 
 // FIX: Define the missing helper class for JSON serialization here.
-public class SettingsFileStructure
+namespace YourSimProject
 {
-    // These properties must match the global config classes
-    public AudioConfig AudioConfig { get; set; }
-    public SystemConfig SystemConfig { get; set; }
-    // Add other persistent global settings here if needed later
-}
-// END FIX
-
-// NOTE: This class assumes the existence of the AudioConfig, SystemConfig, TeamDatabase, 
-//       Conference, Region, Team, Player, PlayerBattingStats, PlayerPitchingStats, 
-//       and PlayerFieldingStats models in your project.
-public class SettingsScreen
-{
-    private readonly GameEngine _engine;
-    private readonly TeamDatabase _teamDatabase; 
-    
-    // NOTE: In a full app, these configs would be loaded/saved via a JSON service
-    private AudioConfig _audioConfig = new(); 
-    private SystemConfig _systemConfig = new(); 
-
-    // Configuration File Path
-    private const string SETTINGS_FILE_PATH = "settings.json";
-
-    // Constants for the Settings Menu options
-    private const string EDITOR = "Editor";
-    private const string AUDIO_MANAGER = "Audio Manager";
-    private const string IMAGE_MANAGER = "Image Manager";
-    private const string SYSTEM_PREFERENCES = "System Preferences";
-
-    public SettingsScreen(GameEngine engine, TeamDatabase teamDatabase)
+    // FIX: Define the missing helper class for JSON serialization here.
+    public class SettingsFileStructure
     {
-        _engine = engine;
-        _teamDatabase = teamDatabase; // Store the database reference
-        LoadSettings(); // Attempt to load saved settings at startup
-        _teamDatabase.LoadDatabase(); // FIX: Ensure we load the League Database on app startup
+        // These properties must match the global config classes
+        public AudioConfig AudioConfig { get; set; } = new();
+        public SystemConfig SystemConfig { get; set; } = new();
+        // Add other persistent global settings here if needed later
     }
+    // END FIX
 
-    /// <summary>
-    /// Loads configuration files from disk or initializes defaults.
-    /// </summary>
-    private void LoadSettings()
+    // (Namespace already opened above)
+    // NOTE: This class assumes the existence of the AudioConfig, SystemConfig, TeamDatabase, 
+    //       Conference, Region, Team, Player, PlayerBattingStats, PlayerPitchingStats, 
+    //       and PlayerFieldingStats models in your project.
+    public class SettingsScreen
     {
-        try
+        private readonly GameEngine _engine;
+        private readonly TeamDatabase _teamDatabase; 
+        
+        // NOTE: In a full app, these configs would be loaded/saved via a JSON service
+    private AudioConfig _audioConfig;
+    private SystemConfig _systemConfig;
+
+        // Configuration File Path
+        private const string SETTINGS_FILE_PATH = "settings.json";
+
+        // Constants for the Settings Menu options
+        private const string EDITOR = "Editor";
+        private const string AUDIO_MANAGER = "Audio Manager";
+        private const string IMAGE_MANAGER = "Image Manager";
+        private const string SYSTEM_PREFERENCES = "System Preferences";
+
+        public SettingsScreen(GameEngine engine, TeamDatabase teamDatabase)
         {
-            if (File.Exists(SETTINGS_FILE_PATH))
+            _engine = engine;
+            _teamDatabase = teamDatabase; // Store the database reference
+            _audioConfig = new AudioConfig();
+            _systemConfig = new SystemConfig();
+            LoadSettings(); // Attempt to load saved settings at startup
+            _teamDatabase.LoadDatabase(); // FIX: Ensure we load the League Database on app startup
+            // Populate GameEngine.Teams from TeamDatabase
+            _engine.Teams = _teamDatabase.Conferences
+                .SelectMany(c => c.Regions)
+                .SelectMany(r => r.Teams)
+                .ToList();
+
+            // Initialize export format in engine and writer factory from loaded settings
+            _engine.ExportFormat = _systemConfig.WorkbookExportFormat;
+            ExcelBuilder.DefaultWriterFactory = () => _systemConfig.WorkbookExportFormat == YourSimProject.Models.ExportFormat.Csv
+                ? new CsvWorkbookWriter() as IWorkbookWriter
+                : new ClosedXmlWorkbookWriter();
+        }
+
+        /// <summary>
+        /// Loads configuration files from disk or initializes defaults.
+        /// </summary>
+        private void LoadSettings()
+        {
+            try
             {
-                string jsonString = File.ReadAllText(SETTINGS_FILE_PATH);
-                // SettingsFileStructure is assumed to contain AudioConfig and SystemConfig
-                var savedSettings = JsonSerializer.Deserialize<SettingsFileStructure>(jsonString);
-                
-                if (savedSettings != null)
+                if (File.Exists(SETTINGS_FILE_PATH))
                 {
-                    _audioConfig = savedSettings.AudioConfig;
-                    _systemConfig = savedSettings.SystemConfig;
-                    // Console.WriteLine("[INFO] Settings loaded successfully.");
-                    return;
-                }
+                    string jsonString = File.ReadAllText(SETTINGS_FILE_PATH);
+                    // Try string-enum deserialization first (preferred going forward)
+                    SettingsFileStructure? savedSettings = null;
+                    try
+                    {
+                        var optStr = new JsonSerializerOptions();
+                        optStr.Converters.Add(new JsonStringEnumConverter());
+                        savedSettings = JsonSerializer.Deserialize<SettingsFileStructure>(jsonString, optStr);
+                    }
+                    catch
+                    {
+                        // Fallback for older numeric enum files
+                        savedSettings = JsonSerializer.Deserialize<SettingsFileStructure>(jsonString);
+                    }
+
+                    if (savedSettings != null)
+                    {
+                        _audioConfig = savedSettings.AudioConfig;
+                        _systemConfig = savedSettings.SystemConfig;
+                        // Console.WriteLine("[INFO] Settings loaded successfully.");
+                        return;
+                        }
+                    }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Failed to load settings: {ex.Message}");
+            }
+            // Initialize defaults if load fails
+            if (_audioConfig == null) _audioConfig = new AudioConfig();
+            if (_systemConfig == null) _systemConfig = new SystemConfig();
+        }
+
+        /// <summary>
+        /// Saves ALL persistent data: Settings/Config and the entire Team Database.
+        /// </summary>
+        private void SaveAllData()
+        {
+            bool configSaved = false;
+            bool dbSaved = false;
+
+            // 1. Save Settings (Audio/System Config)
+            try
+            {
+                var settingsToSave = new SettingsFileStructure
+                {
+                    AudioConfig = _audioConfig,
+                    SystemConfig = _systemConfig,
+                    // TeamDB serialization would be complex and is deferred
+                };
+
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                options.Converters.Add(new JsonStringEnumConverter());
+                string jsonString = JsonSerializer.Serialize(settingsToSave, options);
+                File.WriteAllText(SETTINGS_FILE_PATH, jsonString);
+                configSaved = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n[ERROR] Failed to save CONFIG settings: {ex.Message}");
+            }
+
+            // 2. Save Team Database (Structure, Teams, Players, Coaches)
+            if (_teamDatabase.SaveDatabase())
+            {
+                dbSaved = true;
+            }
+
+            if (configSaved && dbSaved)
+            {
+                Console.WriteLine("\n[SUCCESS] ALL DATA SAVED successfully (Config and League Structure).");
+            }
+            else
+            {
+                Console.WriteLine("\n[ALERT] Data save completed with errors (see above).");
+            }
+            Console.Write("Press any key to continue...");
+            Console.ReadKey(true);
+        }
+
+        /// <summary>
+        /// Persist only the export format change (invoked via CLI override) without touching team database.
+        /// </summary>
+        public void PersistExportFormat(YourSimProject.Models.ExportFormat format)
+        {
+            _systemConfig.WorkbookExportFormat = format;
+            try
+            {
+                var settingsToSave = new SettingsFileStructure
+                {
+                    AudioConfig = _audioConfig,
+                    SystemConfig = _systemConfig
+                };
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                options.Converters.Add(new JsonStringEnumConverter());
+                string jsonString = JsonSerializer.Serialize(settingsToSave, options);
+                File.WriteAllText(SETTINGS_FILE_PATH, jsonString);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WARN] Failed persisting export format to settings.json: {ex.Message}");
             }
         }
-        catch (Exception ex)
+
+        /// <summary>
+        /// Handles the user request to load saved settings and database data.
+        /// </summary>
+        private void HandleLoadSettings()
         {
-            Console.WriteLine($"[ERROR] Failed to load settings: {ex.Message}");
-        }
-        // Initialize defaults if load fails
-        _audioConfig = new AudioConfig();
-        _systemConfig = new SystemConfig();
-    }
-    
-    /// <summary>
-    /// Saves ALL persistent data: Settings/Config and the entire Team Database.
-    /// </summary>
-    private void SaveAllData()
-    {
-        bool configSaved = false;
-        bool dbSaved = false;
-        
-        // 1. Save Settings (Audio/System Config)
-        try
-        {
-            var settingsToSave = new SettingsFileStructure
+            Console.Clear();
+            Console.WriteLine("\n--- LOADING SAVED DATA ---");
+
+            // 1. Load Config (Audio/System)
+            LoadSettings();
+
+            // 2. Load Team Database (Structure, Teams, Players, Coaches)
+            if (_teamDatabase.LoadDatabase())
             {
-                AudioConfig = _audioConfig,
-                SystemConfig = _systemConfig,
-                // TeamDB serialization would be complex and is deferred
-            };
-            
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            string jsonString = JsonSerializer.Serialize(settingsToSave, options);
-            File.WriteAllText(SETTINGS_FILE_PATH, jsonString);
-            configSaved = true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"\n[ERROR] Failed to save CONFIG settings: {ex.Message}");
+                int loadedConfCount = _teamDatabase.Conferences.Count;
+                int loadedTeamCount = _teamDatabase.Conferences.Sum(c => c.Regions.Sum(r => r.Teams.Count));
+                int loadedPlayerCount = _teamDatabase.GetAllPlayers().Count;
+
+                Console.WriteLine($"[SUCCESS] Configuration loaded.");
+                Console.WriteLine($"[SUCCESS] League structure restored: {loadedConfCount} Conferences, {loadedTeamCount} Teams, and {loadedPlayerCount} Players loaded.");
+            }
+            else
+            {
+                Console.WriteLine("[INFO] No league data found to load. Starting with current in-memory data.");
+            }
+
+            Console.WriteLine("\n[SUCCESS] Configuration load process complete.");
+
+            Console.Write("Press any key to return to Settings...");
+            Console.ReadKey(true);
         }
 
-        // 2. Save Team Database (Structure, Teams, Players, Coaches)
-        if (_teamDatabase.SaveDatabase())
-        {
-            dbSaved = true;
-        }
-        
-        if (configSaved && dbSaved)
-        {
-            Console.WriteLine("\n[SUCCESS] ALL DATA SAVED successfully (Config and League Structure).");
-        }
-        else
-        {
-            Console.WriteLine("\n[ALERT] Data save completed with errors (see above).");
-        }
-        Console.Write("Press any key to continue...");
-        Console.ReadKey(true);
-    }
-
-    /// <summary>
-    /// Handles the user request to load saved settings and database data.
-    /// </summary>
-    private void HandleLoadSettings()
-    {
-        Console.Clear();
-        Console.WriteLine("\n--- LOADING SAVED DATA ---");
-        
-        // 1. Load Config (Audio/System)
-        LoadSettings();
-        
-        // 2. Load Team Database (Structure, Teams, Players, Coaches)
-        if (_teamDatabase.LoadDatabase())
-        {
-            int loadedConfCount = _teamDatabase.Conferences.Count;
-            int loadedTeamCount = _teamDatabase.Conferences.Sum(c => c.Regions.Sum(r => r.Teams.Count));
-            int loadedPlayerCount = _teamDatabase.GetAllPlayers().Count;
-
-            Console.WriteLine($"[SUCCESS] Configuration loaded.");
-            Console.WriteLine($"[SUCCESS] League structure restored: {loadedConfCount} Conferences, {loadedTeamCount} Teams, and {loadedPlayerCount} Players loaded.");
-        }
-        else
-        {
-            Console.WriteLine("[INFO] No league data found to load. Starting with current in-memory data.");
-        }
-        
-        Console.WriteLine("\n[SUCCESS] Configuration load process complete.");
-
-        Console.Write("Press any key to return to Settings...");
-        Console.ReadKey(true);
-    }
-
-
-    public void DisplayAndHandle()
-    {
-        Console.Clear();
-        Console.WriteLine("\n--- HOME PLATE: SETTINGS HUB ---");
-        
-        Console.WriteLine($" [1] {EDITOR}");
-        Console.WriteLine($" [2] {AUDIO_MANAGER}");
-        Console.WriteLine($" [3] {IMAGE_MANAGER}");
-        Console.WriteLine($" [4] {SYSTEM_PREFERENCES}");
-        Console.WriteLine($" [S] Save All Data"); 
-        Console.WriteLine($" [L] Load Saved Data");
-        Console.WriteLine($" [B]ack to Main Menu");
-
-        Console.Write("Select an option: ");
-        string input = Console.ReadKey(true).KeyChar.ToString().ToUpper();
-        _engine.PlayClickSound();
-        Console.WriteLine();
-
-        switch (input)
-        {
-            case "1":
-                HandleEditorMenu();
-                break;
-            case "2":
-                HandleAudioManager();
-                break;
-            case "3":
-                HandleImageManager();
-                break;
-            case "4":
-                HandleSystemPreferences();
-                break;
-            case "S": 
-                SaveAllData(); 
-                break;
-            case "L": 
-                HandleLoadSettings(); 
-                break;
-            case "B":
-                _engine.NavigateTo(GameEngine.SCREEN_MAIN_MENU);
-                return;
-            default:
-                Console.WriteLine("Invalid selection.");
-                break;
-        }
-        
-        // Loop back to the Settings main menu 
-        if (input != "B" && input.Length == 1 && char.IsLetterOrDigit(input[0])) 
+        public void DisplayAndHandle()
         {
             Console.Clear();
-            DisplayAndHandle();
-        }
-    }
+            Console.WriteLine("\n--- HOME PLATE: SETTINGS HUB ---");
 
-    // --- 1. Editor Implementation (Fully Functional Menu Loop) ---
-    private void HandleEditorMenu()
-    {
-        while (true)
-        {
-            Console.Clear();
-            Console.WriteLine("\n--- EDITOR: ASSET MANAGEMENT ---");
-            Console.WriteLine($"--- Teams Loaded: {_teamDatabase.Conferences.Sum(c => c.Regions.Sum(r => r.Teams.Count))} ---"); 
-            Console.WriteLine("Select Asset to Create/Edit:");
-            
-            Console.WriteLine(" [C]reate/Edit Conferences"); 
-            Console.WriteLine(" [R]eate/Edit Regions"); 
-            Console.WriteLine(" [T]eams (Roster, Coach, Stats)"); 
-            Console.WriteLine(" [P]layers (Individual Stats)"); // P for Player
-            Console.WriteLine(" [O]aches"); // O for Coach (using O to avoid conflict with C)
-            Console.WriteLine(" [B]ack to Settings Menu");
+            Console.WriteLine($" [1] {EDITOR}");
+            Console.WriteLine($" [2] {AUDIO_MANAGER}");
+            Console.WriteLine($" [3] {IMAGE_MANAGER}");
+            Console.WriteLine($" [4] {SYSTEM_PREFERENCES}");
+            Console.WriteLine($" [S] Save All Data"); 
+            Console.WriteLine($" [L] Load Saved Data");
+            Console.WriteLine($" [B]ack to Main Menu");
 
-            Console.Write("Enter selection: ");
+            Console.Write("Select an option: ");
             string input = Console.ReadKey(true).KeyChar.ToString().ToUpper();
             _engine.PlayClickSound();
+            Console.WriteLine();
 
             switch (input)
             {
-                case "C": HandleAssetEditor("CONFERENCE"); break;
-                case "R": HandleAssetEditor("REGION"); break;
-                case "T": HandleAssetEditor("TEAM"); break;
-                case "P": HandleAssetEditor("PLAYER"); break;
-                case "O": HandleAssetEditor("COACH"); break;
-                case "B": return; 
-                default: Console.WriteLine("Invalid selection."); break;
+                case "1":
+                    HandleEditorMenu();
+                    break;
+                case "2":
+                    HandleAudioManager();
+                    break;
+                case "3":
+                    HandleImageManager();
+                    break;
+                case "4":
+                    HandleSystemPreferences();
+                    break;
+                case "S": 
+                    SaveAllData(); 
+                    break;
+                case "L": 
+                    HandleLoadSettings(); 
+                    break;
+                case "B":
+                    _engine.NavigateTo(GameEngine.SCREEN_MAIN_MENU);
+                    return;
+                default:
+                    Console.WriteLine("Invalid selection.");
+                    break;
             }
-            
-            Console.Write("\nPress any key to return to the Editor menu...");
-            Console.ReadKey(true);
+
+            // Loop back to the Settings main menu 
+            if (input != "B" && input.Length == 1 && char.IsLetterOrDigit(input[0])) 
+            {
+                Console.Clear();
+                DisplayAndHandle();
+            }
         }
-    }
-    
-    private void HandleAssetEditor(string assetType)
-    {
-        while (true)
+
+        // --- 1. Editor Implementation (Fully Functional Menu Loop) ---
+        private void HandleEditorMenu()
         {
-            Console.Clear();
-            Console.WriteLine($"\n--- CREATE/EDIT {assetType.ToUpper()} ---");
-            
-            // --- DISPLAY EXISTING ASSETS ---
-            List<object> assets = new List<object>();
-            if (assetType == "CONFERENCE")
+            while (true)
             {
-                assets.AddRange(_teamDatabase.Conferences);
-                Console.WriteLine($"Existing Conferences ({assets.Count}):");
+                Console.Clear();
+                Console.WriteLine("\n--- EDITOR: ASSET MANAGEMENT ---");
+                Console.WriteLine($"--- Teams Loaded: {_teamDatabase.Conferences.Sum(c => c.Regions.Sum(r => r.Teams.Count))} ---"); 
+                Console.WriteLine("Select Asset to Create/Edit:");
+
+                Console.WriteLine(" [C]reate/Edit Conferences"); 
+                Console.WriteLine(" [R]eate/Edit Regions"); 
+                Console.WriteLine(" [T]eams (Roster, Coach, Stats)"); 
+                Console.WriteLine(" [P]layers (Individual Stats)"); // P for Player
+                Console.WriteLine(" [O]aches"); // O for Coach (using O to avoid conflict with C)
+                Console.WriteLine(" [B]ack to Settings Menu");
+
+                Console.Write("Enter selection: ");
+                string input = Console.ReadKey(true).KeyChar.ToString().ToUpper();
+                _engine.PlayClickSound();
+
+                switch (input)
+                {
+                    case "C": HandleAssetEditor("CONFERENCE"); break;
+                    case "R": HandleAssetEditor("REGION"); break;
+                    case "T": HandleAssetEditor("TEAM"); break;
+                    case "P": HandleAssetEditor("PLAYER"); break;
+                    case "O": HandleAssetEditor("COACH"); break;
+                    case "B": return; 
+                    default: Console.WriteLine("Invalid selection."); break;
+                }
+
+                Console.Write("\nPress any key to return to the Editor menu...");
+                Console.ReadKey(true);
             }
-            else if (assetType == "REGION")
+        }
+
+        private void HandleAssetEditor(string assetType)
+        {
+            while (true)
             {
-                assets.AddRange(_teamDatabase.Conferences.SelectMany(c => c.Regions).ToList());
-                Console.WriteLine($"Existing Regions ({assets.Count}):");
-            }
-            else if (assetType == "TEAM")
-            {
-                assets.AddRange(_teamDatabase.Conferences.SelectMany(c => c.Regions).SelectMany(r => r.Teams).ToList());
+                Console.Clear();
+                Console.WriteLine($"\n--- CREATE/EDIT {assetType.ToUpper()} ---");
+
+                // --- DISPLAY EXISTING ASSETS ---
+                List<object> assets = new List<object>();
+                if (assetType == "CONFERENCE")
+                {
+                    assets.AddRange(_teamDatabase.Conferences);
+                    Console.WriteLine($"Existing Conferences ({assets.Count}):");
+                }
+                else if (assetType == "REGION")
+                {
+                    assets.AddRange(_teamDatabase.Conferences.SelectMany(c => c.Regions).ToList());
+                    Console.WriteLine($"Existing Regions ({assets.Count}):");
+                }
+                else if (assetType == "TEAM")
+                {
+                    assets.AddRange(_teamDatabase.Conferences.SelectMany(c => c.Regions).SelectMany(r => r.Teams).ToList());
                 Console.WriteLine($"Existing Teams ({assets.Count}):");
             }
             else if (assetType == "PLAYER")
@@ -449,9 +504,10 @@ public class SettingsScreen
             Console.WriteLine(" [B] Back to Team Editor");
 
             Console.Write("Enter the ID number of the coach to assign or [B]: ");
-            string input = Console.ReadLine();
+            string? inputRaw = Console.ReadLine();
+            string input = inputRaw?.Trim().ToUpperInvariant() ?? string.Empty;
 
-            if (input.ToUpper() == "B") return;
+            if (input == "B") return;
 
             if (int.TryParse(input, out int index) && index > 0 && index <= coaches.Count)
             {
@@ -492,12 +548,13 @@ public class SettingsScreen
             if (input == "B") return;
 
             Console.Write("\nEnter new value: ");
-            string newValue = Console.ReadLine();
+            string? newValueRaw = Console.ReadLine();
+            string newValue = newValueRaw ?? string.Empty;
 
             switch (input)
             {
                 case "1": 
-                    coach.Name = newValue; 
+                    coach.Name = newValue;
                     break;
                 case "2":
                     // Input validation for Level
@@ -553,7 +610,8 @@ public class SettingsScreen
             if (input == "1")
             {
                 Console.Write("\nEnter new name for Conference: ");
-                string newName = Console.ReadLine();
+                string? newNameRaw = Console.ReadLine();
+                string newName = newNameRaw ?? string.Empty;
                 if (!string.IsNullOrWhiteSpace(newName))
                 {
                     conference.Name = newName;
@@ -584,7 +642,8 @@ public class SettingsScreen
             if (input == "1")
             {
                 Console.Write("\nEnter new name for Region: ");
-                string newName = Console.ReadLine();
+                string? newNameRaw = Console.ReadLine();
+                string newName = newNameRaw ?? string.Empty;
                 if (!string.IsNullOrWhiteSpace(newName))
                 {
                     region.Name = newName;
@@ -652,7 +711,8 @@ public class SettingsScreen
             if (input == "B") return;
 
             Console.Write("\nEnter new value: ");
-            string newValue = Console.ReadLine();
+            string? newValueRaw = Console.ReadLine();
+            string newValue = newValueRaw?.Trim() ?? string.Empty;
             
             // --- Logic to update the Player Model ---
             switch (input)
@@ -664,14 +724,14 @@ public class SettingsScreen
                 case "2": player.Name = newValue; break;
                 case "3": 
                     // Input validation for Class Level (must match Freshman, Sophomore, etc.)
-                    if (new[] { "FRESHMAN", "SOPHOMORE", "JUNIOR", "SENIOR" }.Contains(newValue.ToUpper()))
+                    if (new[] { "FRESHMAN", "SOPHOMORE", "JUNIOR", "SENIOR" }.Contains(newValue.ToUpperInvariant()))
                     {
                         player.ClassLevel = newValue; 
                     } else { Console.WriteLine("Invalid Class. Must be Freshman, Sophomore, Junior, or Senior."); }
                     break;
-                case "4": UpdatePlayerPosition(player, 0, newValue); break;
-                case "5": UpdatePlayerPosition(player, 1, newValue); break;
-                case "6": UpdatePlayerPosition(player, 2, newValue); break;
+                case "4": if(!string.IsNullOrEmpty(newValue)) UpdatePlayerPosition(player, 0, newValue); else Console.WriteLine("No position entered."); break;
+                case "5": if(!string.IsNullOrEmpty(newValue)) UpdatePlayerPosition(player, 1, newValue); else Console.WriteLine("No position entered."); break;
+                case "6": if(!string.IsNullOrEmpty(newValue)) UpdatePlayerPosition(player, 2, newValue); else Console.WriteLine("No position entered."); break;
                 case "7": 
                     if (int.TryParse(newValue, out int br) && br >= 1 && br >= 1 && br <= 6) player.BattingRating = br; 
                     else { Console.WriteLine("Invalid Rating. Must be a number between 1 and 6."); }
@@ -688,16 +748,10 @@ public class SettingsScreen
     }
     
     // FIX: New Method to handle Team Assignment
-    private void HandlePlayerTeamAssignment(Player player, string teamName)
+    private void HandlePlayerTeamAssignment(Player player, string? teamName)
     {
-        Team oldTeam = null;
-        if (!string.IsNullOrEmpty(player.TeamName))
-        {
-            oldTeam = _teamDatabase.GetTeam(player.TeamName);
-        }
-
-        // 1. Find the new target team
-        Team newTeam = _teamDatabase.GetTeam(teamName);
+        Team? oldTeam = !string.IsNullOrEmpty(player.TeamName) ? _teamDatabase.GetTeam(player.TeamName) : null;
+        Team? newTeam = string.IsNullOrWhiteSpace(teamName) ? null : _teamDatabase.GetTeam(teamName);
 
         if (newTeam != null)
         {
@@ -716,7 +770,7 @@ public class SettingsScreen
 
             Console.WriteLine($"\n[SUCCESS] {player.Name} assigned to {newTeam.Name}.");
         }
-        else if (teamName.Equals("Unassigned", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(teamName))
+    else if (string.IsNullOrWhiteSpace(teamName) || teamName.Equals("Unassigned", StringComparison.OrdinalIgnoreCase))
         {
             // 4. Handle Unassigned/Free Agent status
             if (oldTeam != null)
@@ -980,7 +1034,7 @@ public class SettingsScreen
                     // Remove backup assignment for this position
                     if (assigned.ContainsKey(pos) && assigned[pos].Backup != null) {
                         var prevBackup = assigned[pos].Backup;
-                        if (playerRoles.ContainsKey(prevBackup))
+                        if (prevBackup != null && playerRoles.ContainsKey(prevBackup))
                             playerRoles[prevBackup].RemoveAll(r => r == $"Back Up {pos}");
                         assigned[pos] = (assigned[pos].Starter, null);
                         backup = null;
@@ -1007,7 +1061,10 @@ public class SettingsScreen
                     Console.ReadKey(true);
                 }
             }
-            assigned[pos] = (starter!, backup);
+            if (starter != null)
+            {
+                assigned[pos] = (starter, backup);
+            }
         }
         // Preview assignments
         Console.WriteLine("\nManual Fielding Assignment Preview:");
@@ -1520,7 +1577,7 @@ public class SettingsScreen
     {
         Console.WriteLine($"\n--- ADD NEW {assetType.ToUpper()} ---");
         Console.Write($"Enter name for new {assetType}: ");
-        string name = Console.ReadLine();
+    string name = Console.ReadLine() ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -1621,7 +1678,7 @@ public class SettingsScreen
     private void HandleEditAsset(string assetType)
     {
         Console.Write($"\nEnter the ID number of the {assetType} to edit: ");
-        string idInput = Console.ReadLine();
+    string idInput = Console.ReadLine() ?? string.Empty;
         
         // Placeholder for actual lookup and editing logic
         Console.WriteLine($"[PLACEHOLDER] Editing {assetType} with ID '{idInput}'.");
@@ -1773,10 +1830,12 @@ public class SettingsScreen
             
             string soundStatus = _systemConfig.EnableSoundEffects ? "ON" : "OFF";
             string logoStatus = _systemConfig.EnableTeamLogos ? "ON" : "OFF";
+            string exportStatus = _systemConfig.WorkbookExportFormat.ToString().ToUpperInvariant();
             
             Console.WriteLine($" [S] Toggle Sound Effects: {soundStatus}");
             Console.WriteLine($" [L] Toggle Team Logos (Excel/Reports): {logoStatus}");
             Console.WriteLine($" [D] Set Default Save Location (Current: {_systemConfig.DefaultSaveLocation})");
+            Console.WriteLine($" [E] Toggle Export Format (Current: {exportStatus})");
             Console.WriteLine($" [R] Reset All Settings to Default");
             Console.WriteLine(" [B] Back to Settings Menu");
 
@@ -1796,12 +1855,23 @@ public class SettingsScreen
                     break;
                 case "D":
                     Console.Write($"\nEnter new save location (Current: {_systemConfig.DefaultSaveLocation}): ");
-                    string newLocation = Console.ReadLine();
+                    string newLocation = Console.ReadLine() ?? string.Empty;
                     if (!string.IsNullOrWhiteSpace(newLocation))
                     {
                         _systemConfig.DefaultSaveLocation = newLocation;
                         Console.WriteLine($"\nSave location updated to '{newLocation}'.");
                     }
+                    break;
+                case "E":
+                    _systemConfig.WorkbookExportFormat = _systemConfig.WorkbookExportFormat == YourSimProject.Models.ExportFormat.Xlsx
+                        ? YourSimProject.Models.ExportFormat.Csv
+                        : YourSimProject.Models.ExportFormat.Xlsx;
+                    // Reflect into GameEngine and ExcelBuilder default factory
+                    _engine.ExportFormat = _systemConfig.WorkbookExportFormat;
+                    ExcelBuilder.DefaultWriterFactory = () => _systemConfig.WorkbookExportFormat == YourSimProject.Models.ExportFormat.Csv
+                        ? new CsvWorkbookWriter() as IWorkbookWriter
+                        : new ClosedXmlWorkbookWriter();
+                    Console.WriteLine($"\nExport format set to {_systemConfig.WorkbookExportFormat}.");
                     break;
                 case "R":
                     // Resetting involves creating a new instance of the config model
@@ -1828,7 +1898,7 @@ public class SettingsScreen
         if (imageFiles.Count == 0) return;
         
         Console.Write($"\nEnter the team name to assign the {assetType}: ");
-        string teamName = Console.ReadLine();
+    string teamName = Console.ReadLine() ?? string.Empty;
         
         if (string.IsNullOrWhiteSpace(teamName))
         {
@@ -1887,11 +1957,12 @@ public class SettingsScreen
             try { Directory.CreateDirectory("Audio"); } catch { }
             return new List<string>();
         }
-        return Directory.GetFiles("Audio")
-                        .Select(Path.GetFileName)
-                        .Where(f => f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) || 
-                                    f.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
-                        .ToList();
+    return Directory.GetFiles("Audio")
+            .Select(Path.GetFileName)
+            .Where(f => f != null && (f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) || 
+                    f.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase)))
+            .Select(f => f!)
+            .ToList();
     }
 
     private List<string> GetImageFiles()
@@ -1902,10 +1973,12 @@ public class SettingsScreen
             try { Directory.CreateDirectory("Team"); } catch { }
             return new List<string>();
         } 
-        return Directory.GetFiles("Team")
-                        .Select(Path.GetFileName)
-                        .Where(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || 
-                                    f.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
-                        .ToList();
+    return Directory.GetFiles("Team")
+            .Select(Path.GetFileName)
+            .Where(f => f != null && (f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || 
+                    f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)))
+            .Select(f => f!)
+            .ToList();
     }
+}
 }

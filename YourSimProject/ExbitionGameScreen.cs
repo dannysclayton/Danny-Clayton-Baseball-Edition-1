@@ -1,88 +1,148 @@
+using YourSimProject.Services;
+using YourSimProject.Models;
 using System;
 using System.Linq;
 
-public class ExhibitionGameScreen
+namespace YourSimProject
 {
-    private readonly GameEngine _engine;
-    private readonly GameLoopScreen _gameLoop; // Requires GameLoopScreen.cs
-    
-    // Exhibition Game Options
-    private const string PICK_TEAMS = "Pick Teams";
-    private const string SET_CONDITIONS = "Set Game Conditions";
-    private const string CHOOSE_CONTROL = "Choose Control Type";
-    private const string START_GAME = "Start Game";
-
-    // Temporary Storage for Exhibition Settings
-    private string teamA = "Not Set";
-    private string teamB = "Not Set";
-    private string location = "Default";
-    private string controlType = "Not Set";
-
-    public ExhibitionGameScreen(GameEngine engine)
+    public class ExhibitionGameScreen
     {
-        _engine = engine;
-        // NOTE: GameLoopScreen must be instantiated here before use
-        _gameLoop = new GameLoopScreen(engine); 
-    }
+        private readonly GameEngine _engine;
+        private readonly GameLoopScreen _gameLoop; // Requires GameLoopScreen.cs
+        private readonly TeamDatabase _teamDatabase;
 
-    public void DisplayAndHandle()
-    {
-        while (true)
+        // Exhibition Game Options
+        private const string PICK_TEAMS = "Pick Teams";
+        private const string SET_CONDITIONS = "Set Game Conditions";
+        private const string CHOOSE_CONTROL = "Choose Control Type";
+        private const string START_GAME = "Start Game";
+
+        // Temporary Storage for Exhibition Settings
+        private string teamA = "Not Set";
+        private string teamB = "Not Set";
+        private string location = "Default";
+        private string controlType = "Not Set";
+
+        public ExhibitionGameScreen(GameEngine engine, TeamDatabase teamDatabase)
         {
-            Console.Clear();
-            Console.WriteLine("\n--- 3RD BASE: EXHIBITION GAME SETUP ---");
-            Console.WriteLine($" [1] {PICK_TEAMS} (A: {teamA}, B: {teamB})");
-            Console.WriteLine($" [2] {SET_CONDITIONS} (Location: {location})");
-            Console.WriteLine($" [3] {CHOOSE_CONTROL} (Type: {controlType})");
-            Console.WriteLine($" [S] {START_GAME}");
-            Console.WriteLine($" [B]ack to Main Menu");
+            _engine = engine;
+            _teamDatabase = teamDatabase;
+            // NOTE: GameLoopScreen must be instantiated here before use
+            _gameLoop = new GameLoopScreen(engine);
+        }
 
-            Console.Write("Enter selection: ");
-            string input = Console.ReadKey(true).KeyChar.ToString().ToUpper();
-            _engine.PlayClickSound();
-
-            switch (input)
+        public void DisplayAndHandle()
+        {
+            while (true)
             {
-                case "1":
-                    HandlePickTeams();
-                    break;
-                case "2":
-                    HandleSetGameConditions();
-                    break;
-                case "3":
-                    HandleChooseControlType();
-                    break;
-                case "S":
-                    if (HandleStartGame())
-                    {
-                        return; // Exits the Exhibition screen loop to start the game
-                    }
-                    break;
-                case "B":
-                    _engine.NavigateTo(GameEngine.SCREEN_MAIN_MENU);
-                    return;
-                default:
-                    Console.WriteLine("\nInvalid selection. Press any key to continue.");
-                    Console.ReadKey(true);
-                    break;
+                Console.Clear();
+                Console.WriteLine("\n--- 3RD BASE: EXHIBITION GAME SETUP ---");
+                Console.WriteLine($" [1] {PICK_TEAMS} (A: {teamA}, B: {teamB})");
+                Console.WriteLine($" [2] {SET_CONDITIONS} (Location: {location})");
+                Console.WriteLine($" [3] {CHOOSE_CONTROL} (Type: {controlType})");
+                Console.WriteLine($" [S] {START_GAME}");
+                Console.WriteLine($" [B]ack to Main Menu");
+
+                Console.Write("Enter selection: ");
+                string input = Console.ReadKey(true).KeyChar.ToString().ToUpper();
+                _engine.PlayClickSound();
+
+                switch (input)
+                {
+                    case "1":
+                        HandlePickTeams();
+                        break;
+                    case "2":
+                        HandleSetGameConditions();
+                        break;
+                    case "3":
+                        HandleChooseControlType();
+                        break;
+                    case "S":
+                        if (HandleStartGame())
+                        {
+                            return; // Exits the Exhibition screen loop to start the game
+                        }
+                        break;
+                    case "B":
+                        _engine.NavigateTo(GameEngine.SCREEN_MAIN_MENU);
+                        return;
+                    default:
+                        Console.WriteLine("\nInvalid selection. Press any key to continue.");
+                        Console.ReadKey(true);
+                        break;
+                }
             }
         }
-    }
 
-    private void HandlePickTeams()
-    {
+        private void HandlePickTeams()
+        {
+            // Suppress nullability warnings for _engine.Teams in this routine after explicit runtime checks
+            #pragma warning disable CS8602
+        // Always refresh the team list from the database before selection
+        if (_engine != null)
+        {
+            _engine.Teams = _teamDatabase.Conferences
+                .SelectMany(c => c.Regions)
+                .SelectMany(r => r.Teams)
+                .ToList();
+        }
         Console.WriteLine("\n--- PICK TEAMS ---");
-        Console.WriteLine("Note: Full team selection logic (Conference->Region->Team) is a future step.");
+        if (_engine.Teams == null || _engine.Teams.Count == 0)
+        {
+            Console.WriteLine("[ERROR] No teams loaded in engine context. Load or create teams first.");
+            Console.Write("Press any key to continue...");
+            Console.ReadKey(true);
+            return;
+        }
+        var teams = _engine.Teams!; // Null-checked above
+        int teamCount = teams.Count;
+    Console.WriteLine($"[DIAGNOSTIC] Number of teams loaded: {teamCount}");
+        if (teamCount > 0)
+        {
+            Console.WriteLine("[DIAGNOSTIC] Team names:");
+            if (teams != null)
+            foreach (var t in teams)
+            {
+                Console.WriteLine($" - {t.Name}");
+            }
+        }
+        Console.WriteLine("Select teams for the exhibition game:");
 
-        Console.Write("Enter Team A Name: ");
-        teamA = Console.ReadLine()?.Trim() ?? "Away Team";
+        if (teamCount < 2)
+        {
+            Console.WriteLine("[ERROR] Not enough teams loaded. Please upload or create teams first.");
+            Console.Write("Press any key to continue...");
+            Console.ReadKey(true);
+            return;
+        }
 
-        Console.Write("Enter Team B Name: ");
-        teamB = Console.ReadLine()?.Trim() ?? "Home Team";
+        // Safe enumeration: teams is guaranteed non-null above
+        for (int i = 0; i < teamCount; i++)
+        {
+            Console.WriteLine($" [{i + 1}] {teams[i].Name}");
+        }
 
-        Console.WriteLine($"Matchup set: {teamA} vs {teamB}.");
-        Console.Write("Press any key to continue...");
-        Console.ReadKey(true);
+        Console.Write("Select Team A by number: ");
+        int teamAIdx = -1;
+    while (!int.TryParse(Console.ReadLine(), out teamAIdx) || teamAIdx < 1 || teamAIdx > teamCount)
+        {
+            Console.Write("Invalid selection. Enter Team A number: ");
+        }
+    teamA = teams[teamAIdx - 1].Name;
+
+        Console.Write("Select Team B by number: ");
+        int teamBIdx = -1;
+        while (!int.TryParse(Console.ReadLine(), out teamBIdx) || teamBIdx < 1 || teamBIdx > teamCount || teamBIdx == teamAIdx)
+        {
+            Console.Write("Invalid selection. Enter Team B number (must be different from Team A): ");
+        }
+    teamB = teams[teamBIdx - 1].Name;
+
+    Console.WriteLine($"Matchup set: {teamA} vs {teamB}.");
+    Console.Write("Press any key to continue...");
+    Console.ReadKey(true);
+    #pragma warning restore CS8602
     }
 
     private void HandleSetGameConditions()
@@ -142,6 +202,7 @@ public class ExhibitionGameScreen
         _gameLoop.StartExhibitionGame(teamA, teamB, location, controlType);
         
         // Execution transfers to GameLoopScreen.cs until the game ends.
-        return true;
+    return true;
+}
     }
 }

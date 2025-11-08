@@ -1,0 +1,56 @@
+# Build outputs
+bin/
+obj/
+
+# VS tooling
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test results and coverage
+TestResults/
+*.coverage
+*.coveragexml
+
+# Packages
+*.nupkg
+packages/
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Rider/JetBrains
+.idea/
+*.iml
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# NuGet
+project.lock.json
+
+# Generated stats/exports
+Stats/
+
+# Local settings
+settings.json
+
+# Excel autosaves
+~$*.xlsx
+
+# Windows specific
+Desktop.ini
+$RECYCLE.BIN/
+
+# Ignore Team Menu Selection build outputs
+Team Menu Selection/bin/
+Team Menu Selection/obj/

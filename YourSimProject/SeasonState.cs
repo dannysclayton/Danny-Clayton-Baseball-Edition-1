@@ -2,7 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq; // For methods like .ToList()
+using YourSimProject.Models;
 
+namespace YourSimProject
+{
 public class SeasonState
 {
     // 1. SEASON SETUP SETTINGS (from the Season Creation Flow)
@@ -17,18 +20,18 @@ public class SeasonState
     /// Defines the type of control for the season.
     /// Example: "One Team User Control"
     /// </summary>
-    public string ControlType { get; set; }
+    public string ControlType { get; set; } = "";
 
     /// <summary>
     /// Defines the playoff structure chosen.
     /// Example: "College - Mixed Format"
     /// </summary>
-    public string PlayoffFormat { get; set; }
+    public string PlayoffFormat { get; set; } = "";
 
     /// <summary>
     /// The name assigned when the season was saved.
     /// </summary>
-    public string SeasonName { get; set; }
+    public string SeasonName { get; set; } = "";
     
     // 2. LEAGUE DATA (The entire active league structure)
 
@@ -86,4 +89,5 @@ public class SeasonState
     /// This ensures player stats carry over year-to-year.
     /// </summary>
     public Dictionary<string, string> CareerStatPointers { get; set; } = new(); 
+}
 }

@@ -8,8 +8,43 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EPPlus" Version="8.2.1" />
+    <PackageReference Include="ClosedXML" Version="0.102.2" />
     <PackageReference Include="System.Windows.Extensions" Version="9.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Audio\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Audio\bulldogs.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\Click.wav" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\extrabases.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\finaloutofhalfinning.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\groesbeck.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\halfinningchange.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\hit.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\homepitcherchange.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\homerun1.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\homerun2.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\hometeamhit.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\hometeamscore.wav" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\hometeamwin.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\hometeamwin.wav" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\mountainlions.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\mustangs.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\out.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\playball.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\playergettingrbi.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\popout.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\runnersinscoringposition.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\select.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\Single.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\start.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\startofninethinning.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\strike out.wav" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\visitorsscoring.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\vistitorpitcherchange.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Audio\warriors.mp3" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
